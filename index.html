@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小故事人设卡生成器</title>
+    <style>
+        :root {
+            --primary-color: #5e60ce;
+            --primary-light: #e0e1ff;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            --border-color: #dfe6e9;
+            --input-bg: #fdfdfd;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 25px; }
+        header h1 { font-size: 2rem; color: var(--primary-color); margin-bottom: 8px; letter-spacing: 1px; }
+        header p { color: var(--text-sub); font-size: 0.95rem; }
+
+        /* ===== Content Cards ===== */
+        .card-section {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 20px; padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .section-icon {
+            width: 36px; height: 36px;
+            background: var(--primary-light); color: var(--primary-color);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 1.2rem;
+        }
+        .section-header h2 { font-size: 1.2rem; color: var(--text-main); }
+
+        /* ===== 小世界模块 ===== */
+        .world-manager {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+        }
+        .world-manager select {
+            flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 600;
+            color: var(--primary-color); background: var(--input-bg); cursor: pointer;
+        }
+        .btn-wm { border: none; cursor: pointer; padding: 7px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; transition: all 0.18s; white-space: nowrap; }
+        .btn-wm-add { background: var(--primary-color); color: #fff; }
+        .btn-wm-add:hover { background: #4e50bf; }
+        .btn-wm-rename { background: #f0f0f0; color: var(--text-main); }
+        .btn-wm-rename:hover { background: #e0e0e0; }
+        .btn-wm-del { background: #fff0f0; color: #e17055; border: 1px solid #fab1a0; }
+        .btn-wm-del:hover { background: #ffe0e0; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-main); font-size: 0.9rem; }
+        input[type="text"], input[type="password"], textarea, select {
+            width: 100%; padding: 10px 14px; border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm); background: var(--input-bg); color: var(--text-main);
+            font-size: 0.95rem; transition: all 0.2s ease;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(94, 96, 206, 0.1); background: #fff;
+        }
+        textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+
+        .protagonist-list { display: flex; flex-direction: column; gap: 16px; }
+        .protagonist-card {
+            background: #fcfcfc; border: 1px solid #eee; border-radius: var(--radius-sm); padding: 16px; position: relative;
+        }
+        .protagonist-card .btn-remove {
+            position: absolute; top: 12px; right: 12px; background: transparent; color: #ff7675; border: none; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 4px;
+        }
+        .protagonist-card .btn-remove:hover { color: #d63031; background: #fff0f0; border-radius: 6px; }
+        .prota-header { display: flex; gap: 12px; margin-bottom: 12px; }
+        .prota-header input { flex: 2; }
+        .prota-header select { flex: 1; min-width: 100px; }
+
+        .btn-add-full {
+            width: 100%; padding: 12px; background: #f8f9fa; color: var(--primary-color);
+            border: 1px dashed var(--primary-color); border-radius: var(--radius-sm);
+            cursor: pointer; font-weight: 600; transition: background 0.2s;
+        }
+        .btn-add-full:hover { background: var(--primary-light); }
+
+        /* ===== Tabs ===== */
+        .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; }
+        .tab-btn {
+            background: transparent; border: 2px solid transparent; color: var(--text-sub);
+            padding: 10px 24px; border-radius: 20px; cursor: pointer; font-size: 1rem; font-weight: 700; transition: all 0.2s ease;
+        }
+        .tab-btn:hover { background: #e1e1e1; }
+        .tab-btn.active { background: var(--primary-color); color: #fff; box-shadow: 0 4px 10px rgba(94, 96, 206, 0.3); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ===== 本次灵感 (全局共享) ===== */
+        .current-inspo-bar {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow);
+            padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap;
+        }
+        .current-inspo-label { font-weight: 700; color: var(--text-sub); white-space: nowrap; padding-top: 2px; }
+        .current-inspo-tags { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; min-height: 28px; }
+        .current-inspo-empty { color: #b2bec3; font-size: 0.88rem; }
+        .current-inspo-tag {
+            display: inline-flex; align-items: center; background: #fff; border: 2px solid var(--primary-color);
+            color: var(--primary-color); padding: 4px 12px; border-radius: 18px; font-size: 0.85rem; font-weight: 700; line-height: 1.2;
+        }
+
+        /* ===== 灵感池 (复制原版) ===== */
+        .inspo-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .inspo-pool-box, .inspo-roll-box, .namer-pool-box, .namer-roll-box {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow);
+        }
+        .inspo-pool-box h3, .inspo-roll-box h3, .namer-pool-box h4, .namer-roll-box h4 {
+            font-size: 1rem; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+        }
+        .inspo-input-row { display: flex; gap: 8px; margin-bottom: 14px; }
+        .btn-inspo-add { padding: 9px 16px; background: var(--primary-color); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; font-size: 0.88rem; white-space: nowrap; transition: background 0.18s; }
+        .btn-inspo-add:hover { background: #4e50bf; }
+        .inspo-tags, .namer-tags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 80px; padding: 10px; background: #f8f9fa; border-radius: var(--radius-sm); border: 1px dashed var(--border-color); margin-bottom: 12px; max-height: 200px; overflow-y: auto; }
+        .inspo-tag { display: inline-flex; align-items: center; gap: 5px; background: var(--primary-light); color: var(--primary-color); padding: 4px 10px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: default; transition: background 0.15s; }
+        .inspo-tag:hover { background: #c8c9ff; }
+        .inspo-tag.selected { background: var(--primary-color); color: #fff; box-shadow: 0 2px 8px rgba(94, 96, 206, 0.25); }
+        .inspo-tag-del, .namer-tag-del { cursor: pointer; color: #a29bfe; font-size: 1rem; line-height: 1; padding: 0 1px; }
+        .inspo-tag-del:hover, .namer-tag-del:hover { color: #d63031; }
+        .inspo-tag-empty, .namer-tag-empty { color: #b2bec3; font-size: 0.85rem; align-self: center; padding: 4px; }
+        .inspo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-inspo-import { padding: 7px 13px; background: #f0f0f0; color: var(--text-main); border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: background 0.18s; }
+        .btn-inspo-import:hover { background: #e0e0e0; }
+        .btn-inspo-clear { padding: 7px 13px; background: #fff0f0; color: #e17055; border: 1px solid #fab1a0; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: background 0.18s; }
+        .btn-inspo-clear:hover { background: #ffe0e0; }
+
+        .inspo-roll-box { display: flex; flex-direction: column; }
+        .inspo-roll-result { flex: 1; min-height: 150px; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; padding: 16px; background: linear-gradient(135deg, #f8f7ff 0%, #f0f1ff 100%); border-radius: var(--radius-sm); border: 1px solid #e0e1ff; margin-bottom: 18px; }
+        .inspo-roll-empty, .namer-result-empty { color: #b2bec3; font-size: 0.88rem; align-self: center; width: 100%; text-align: center; }
+        .inspo-rolled-tag, .namer-rolled-name { display: inline-flex; align-items: center; background: #fff; border: 2px solid var(--primary-color); color: var(--primary-color); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; box-shadow: 0 2px 8px rgba(94, 96, 206, 0.15); animation: rollIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .namer-rolled-name { cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .namer-rolled-name:hover { background: var(--primary-color); color: #fff; }
+        @keyframes rollIn { from { opacity: 0; transform: scale(0.6) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        .inspo-roll-controls { display: flex; align-items: center; gap: 12px; }
+        .btn-roll, .btn-roll-name { flex: 1; padding: 12px; background: var(--primary-color); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 1rem; font-weight: 700; transition: all 0.2s; box-shadow: 0 4px 12px rgba(94, 96, 206, 0.3); }
+        .btn-roll:hover, .btn-roll-name:hover { background: #4e50bf; transform: translateY(-1px); }
+        .roll-count-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .roll-count-wrap label { font-size: 0.72rem; color: var(--text-sub); font-weight: 600; }
+        #rollCount, .namer-option-group input[type="number"] { width: 60px; padding: 7px; text-align: center; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 700; color: var(--primary-color); background: var(--input-bg); }
+
+        .namer-panel { margin-top: 20px; }
+        .namer-section-title { font-size: 1rem; font-weight: 700; color: var(--text-sub); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+        .namer-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        .namer-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 14px; font-size: 0.82rem; font-weight: 600; }
+        .namer-tag.surname { background: #e3f2fd; color: #1565c0; }
+        .namer-tag.charname { background: #f3e5f5; color: #6a1b9a; }
+        .namer-options { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+        .namer-option-group { display: flex; flex-direction: column; gap: 4px; }
+        .namer-option-group label { font-size: 0.72rem; color: var(--text-sub); font-weight: 600; }
+        .namer-option-group select { padding: 6px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 600; color: var(--primary-color); background: var(--input-bg); min-width: 80px; }
+        .namer-result { flex: 1; min-height: 90px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; padding: 12px; background: linear-gradient(135deg, #f8f7ff 0%, #f0f1ff 100%); border-radius: var(--radius-sm); border: 1px solid #e0e1ff; margin-bottom: 12px; }
+        .namer-hint { font-size: 0.75rem; color: #b2bec3; text-align: center; margin-top: 6px; }
+
+        /* ===== AI 辅助模块 ===== */
+        .ai-config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .api-key-wrap { display: flex; gap: 8px; }
+        .api-key-wrap input { flex: 1; }
+        .btn-eye { padding: 0 12px; background: #f0f0f0; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; font-size: 1rem; transition: background 0.15s; }
+        .btn-fetch-models { padding: 9px 20px; background: #f0f0f0; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: background 0.18s; margin-bottom: 14px; }
+        .api-status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 0.85rem; font-weight: 600; color: var(--text-sub); min-height: 22px; }
+        .api-dot { width: 9px; height: 9px; border-radius: 50%; background: #b2bec3; flex-shrink: 0; transition: background 0.3s; }
+        .api-dot.valid { background: #00b894; }
+        .api-dot.invalid { background: #ff7675; }
+        .api-dot.loading { background: #fdcb6e; animation: pulse 0.8s infinite; }
+        .model-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 180px; overflow-y: auto; padding: 4px 0; }
+        .model-card { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border: 2px solid var(--border-color); border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--text-sub); background: #fff; transition: all 0.18s; user-select: none; }
+        .model-card.selected { border-color: var(--primary-color); background: var(--primary-light); color: var(--primary-color); }
+        .model-dot { width: 7px; height: 7px; border-radius: 50%; background: #00b894; }
+
+        .ai-block { margin-bottom: 20px; }
+        .ai-block-label { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; color: var(--text-main); margin-bottom: 8px; }
+        .ai-tag-badge { background: #2d3436; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-family: monospace; letter-spacing: 0.5px; }
+        .ai-block-hint { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 6px; }
+
+        .ai-guide-module { background: #fcfcfc; border: 1px solid #eee; border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; }
+        .ai-guide-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; cursor: pointer; user-select: none; }
+        .ai-guide-header input[type="checkbox"] { accent-color: var(--primary-color); width: 16px; height: 16px; }
+        .ai-guide-header .guide-title { font-weight: 700; font-size: 0.9rem; color: var(--text-main); }
+        .ai-guide-header .guide-tag { background: #2d3436; color: #fff; padding: 1px 7px; border-radius: 4px; font-size: 0.7rem; font-family: monospace; }
+        .ai-guide-body textarea { min-height: 60px; font-size: 0.88rem; }
+        .ai-guide-hint { font-size: 0.78rem; color: var(--text-sub); margin-bottom: 6px; }
+
+        .json-preview-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700; font-size: 0.9rem; color: var(--text-main); margin-bottom: 8px; }
+        .json-preview-toggle .arrow { display: inline-block; transition: transform 0.2s; font-size: 0.8rem; }
+        .json-preview-toggle.open .arrow { transform: rotate(90deg); }
+
+        .stream-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .stream-toggle label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--text-sub); }
+        .stream-toggle input[type="checkbox"] { accent-color: var(--primary-color); width: 16px; height: 16px; }
+
+        .ai-generate-area { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+        .btn-ai-generate { padding: 12px 36px; background: linear-gradient(135deg, #5e60ce, #a29bfe); color: #fff; border: none; border-radius: 30px; cursor: pointer; font-size: 1rem; font-weight: 700; box-shadow: 0 4px 15px rgba(94,96,206,0.4); transition: all 0.2s; }
+        .btn-ai-generate:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(94,96,206,0.5); }
+        .btn-ai-generate:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+        .ai-status-text { font-size: 0.85rem; color: var(--text-sub); }
+        .ai-status-text.error { color: #e17055; }
+        .ai-status-text.success { color: #00b894; }
+
+        .ai-raw-reply-section { background: #f8f9fa; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px; }
+        .ai-raw-reply-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .ai-raw-reply-header h4 { font-size: 0.9rem; color: var(--text-main); }
+        .ai-raw-reply-content { font-family: 'Consolas', monospace; font-size: 0.82rem; line-height: 1.6; max-height: 500px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: #2d3436; background: #fff; border: 1px solid #eee; border-radius: var(--radius-sm); padding: 12px; min-height: 60px; }
+
+        .btn-copy-small { padding: 5px 14px; background: #f0f0f0; color: var(--text-main); border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: background 0.15s; }
+        .btn-copy-small:hover { background: #e0e0e0; }
+
+        /* ===== Modal ===== */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .modal.active { display: flex; }
+        .modal-content { background: #fff; border-radius: var(--radius-md); width: 90%; max-width: 500px; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .modal-footer { padding: 16px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888; }
+        .btn-modal-confirm { padding: 9px 24px; background: var(--primary-color); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; }
+        .btn-modal-cancel { padding: 9px 20px; background: #f0f0f0; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; }
+
+        /* ===== Toast ===== */
+        .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #2d3436; color: #fff; padding: 12px 30px; border-radius: 30px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 2000; }
+        .toast.show { opacity: 1; }
+
+        @media (max-width: 768px) {
+            .namer-grid, .ai-config-grid, .inspo-panel { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>小故事人设卡生成器</h1>
+        <p>Short Story Character Card Generator</p>
+    </header>
+
+    <div class="card-section" id="small-world">
+        <div class="section-header">
+            <div class="section-icon">🌍</div>
+            <h2>小世界</h2>
+        </div>
+
+        <div class="world-manager">
+            <select id="worldSelect" onchange="switchWorld(this.value)"></select>
+            <button type="button" class="btn-wm btn-wm-add" onclick="addWorld()">＋ 新增世界</button>
+            <button type="button" class="btn-wm btn-wm-rename" onclick="renameWorld()">✏️ 重命名</button>
+            <button type="button" class="btn-wm btn-wm-del" onclick="deleteWorld()">🗑️ 删除</button>
+        </div>
+
+        <div class="form-group">
+            <label>📖 世界观设定 (背景、规则、氛围)</label>
+            <textarea id="worldSetting" placeholder="例如：这是一个充满魔法与机械的赛博中世纪世界..." oninput="autoSaveWorld()"></textarea>
+        </div>
+
+        <div style="margin-top: 25px;">
+            <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                👥 主角设定
+            </h3>
+            <div id="protagonistsContainer" class="protagonist-list">
+            </div>
+            <button type="button" class="btn-add-full" style="margin-top: 15px;" onclick="addProtagonist()">+ 添加主角</button>
+        </div>
+    </div>
+
+    <div class="current-inspo-bar" id="currentInspoBar">
+        <span class="current-inspo-label">🧩 本次随机灵感</span>
+        <div class="current-inspo-tags" id="currentInspoTags">
+            <span class="current-inspo-empty">尚未选择灵感词条</span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="inspo">✨ 灵感</button>
+        <button class="tab-btn" data-tab="gen">🤖 生成</button>
+    </div>
+
+    <div class="tab-content active" id="tab-inspo">
+        <div class="inspo-panel">
+            <div class="inspo-pool-box">
+                <h3>🌀 灵感词库</h3>
+                <div class="inspo-input-row">
+                    <input type="text" id="inspoInput" placeholder="输入词语，按 Enter 添加…" onkeydown="inspoInputKeydown(event)">
+                    <button type="button" class="btn-inspo-add" onclick="addInspoWord()">添加</button>
+                </div>
+                <div class="inspo-tags" id="inspoTags">
+                    <span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>
+                </div>
+                <div class="inspo-actions">
+                    <button type="button" class="btn-inspo-import" onclick="openImportModal()">📋 批量导入</button>
+                    <button type="button" class="btn-inspo-clear" onclick="clearInspoPool()">清空词库</button>
+                </div>
+            </div>
+            <div class="inspo-roll-box">
+                <h3>💡 灵感时刻</h3>
+                <div class="inspo-roll-result" id="inspoRollResult">
+                    <span class="inspo-roll-empty">点击下方按钮，随机抽取灵感词～</span>
+                </div>
+                <div class="inspo-roll-controls">
+                    <div class="roll-count-wrap">
+                        <label>抽取数量</label>
+                        <input type="number" id="rollCount" value="4" min="1" max="10">
+                    </div>
+                    <button type="button" class="btn-roll" onclick="rollInspo()">✨ Roll！</button>
+                    <button type="button" class="btn-inspo-import" onclick="clearCurrentInspo()">清空灵感</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="namer-panel">
+            <div class="namer-section-title">🔤 懒人起名器</div>
+            <div class="namer-grid">
+                <div class="namer-pool-box">
+                    <h4>🏷️ 姓氏池</h4>
+                    <div class="namer-tags" id="surnamePool"><span class="namer-tag-empty">还没有姓氏～</span></div>
+                    <div class="inspo-input-row">
+                        <input type="text" id="surnameInput" placeholder="输入姓氏…" onkeydown="namerInputKeydown(event,'surname')">
+                        <button type="button" class="btn-inspo-add" onclick="addNamerWord('surname')">添加</button>
+                    </div>
+                    <div class="inspo-actions" style="margin-top:8px;">
+                        <button type="button" class="btn-inspo-import" onclick="loadDefaultSurnames()">载入默认</button>
+                        <button type="button" class="btn-inspo-clear" onclick="clearNamerPool('surname')">清空</button>
+                    </div>
+                </div>
+                <div class="namer-pool-box">
+                    <h4>✍️ 名字字池 (默认偏男性)</h4>
+                    <div class="namer-tags" id="charnamePool"><span class="namer-tag-empty">还没有字～</span></div>
+                    <div class="inspo-input-row">
+                        <input type="text" id="charnameInput" placeholder="输入单字…" onkeydown="namerInputKeydown(event,'charname')">
+                        <button type="button" class="btn-inspo-add" onclick="addNamerWord('charname')">添加</button>
+                    </div>
+                    <div class="inspo-actions" style="margin-top:8px;">
+                        <button type="button" class="btn-inspo-import" onclick="loadDefaultCharnames()">载入默认</button>
+                        <button type="button" class="btn-inspo-clear" onclick="clearNamerPool('charname')">清空</button>
+                    </div>
+                </div>
+                <div class="namer-roll-box">
+                    <h4>🎲 随机起名</h4>
+                    <div class="namer-options">
+                        <div class="namer-option-group">
+                            <label>名字字数</label>
+                            <select id="nameLength">
+                                <option value="2">二字名</option>
+                                <option value="3" selected>三字名</option>
+                            </select>
+                        </div>
+                        <div class="namer-option-group">
+                            <label>生成数量</label>
+                            <input type="number" id="nameCount" value="6" min="1" max="20">
+                        </div>
+                    </div>
+                    <div class="namer-result" id="namerResult"><span class="namer-result-empty">点击下方按钮随机生成名字～</span></div>
+                    <button type="button" class="btn-roll-name" onclick="rollNames()">✨ Roll 名字！</button>
+                    <p class="namer-hint">点击名字可单独复制</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-gen">
+        <div class="card-section">
+            <div class="section-header">
+                <div class="section-icon">🔌</div>
+                <h2>API 配置</h2>
+            </div>
+            <div class="world-manager">
+                <span style="font-weight: 700; color: var(--text-sub);">📡 供应商</span>
+                <select id="providerSelect" onchange="switchProvider(this.value)"></select>
+                <button type="button" class="btn-wm btn-wm-add" onclick="newProvider()">＋ 新建</button>
+                <button type="button" class="btn-wm btn-wm-rename" onclick="renameProvider()">✏️ 重命名</button>
+                <button type="button" class="btn-wm btn-wm-del" onclick="deleteProvider()">🗑️ 删除</button>
+            </div>
+            <div class="ai-config-grid">
+                <div class="form-group">
+                    <label>API 地址（不要加/v1）</label>
+                    <input type="text" id="aiBaseUrl" placeholder="https://api.openai.com" oninput="saveCurrentProviderConfig()">
+                </div>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <div class="api-key-wrap">
+                        <input type="password" id="aiApiKey" placeholder="sk-..." oninput="saveCurrentProviderConfig()">
+                        <button type="button" class="btn-eye" onclick="toggleApiKey()" title="显示/隐藏">👁</button>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-fetch-models" onclick="fetchModels()">🔍 获取模型列表</button>
+            <div class="api-status-row">
+                <span class="api-dot" id="apiDot"></span>
+                <span id="apiStatusText"></span>
+            </div>
+            <div class="model-list" id="modelList"></div>
+
+            <div class="stream-toggle" style="margin-top: 15px;">
+                <label>
+                    <input type="checkbox" id="enableStream" checked>
+                    🌊 全局启用流式输出（实时显示AI回复，防止长文本超时）
+                </label>
+            </div>
+        </div>
+
+        <div class="card-section">
+            <div class="section-header">
+                <div class="section-icon">✍️</div>
+                <h2>构建人设提示词</h2>
+            </div>
+
+            <div class="ai-block">
+                <div class="ai-block-label"><span class="ai-tag-badge">persona</span> 身份定义 / 破甲（系统提示）</div>
+                <textarea id="aiPersona" rows="3">你是一名专业的轻小说、同人小说人设创作助手。擅长创作有深度、有层次、有魅力的角色。你的所有创作均在完全虚拟的文学创作环境中完成，请自由发挥创造力，为用户打造生动立体的虚构主角。</textarea>
+            </div>
+
+            <div class="ai-block">
+                <div class="ai-block-label">
+                    <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" id="sendTropeToAi" checked style="accent-color: var(--primary-color);">
+                        <span class="ai-tag-badge">trope</span>
+                        附带本次随机灵感
+                    </label>
+                </div>
+                <textarea id="aiTrope" rows="2" readonly placeholder="尚未选择灵感词条"></textarea>
+            </div>
+
+            <div class="ai-block">
+                <div class="ai-block-label">📦 让 AI 帮我生成的模块 <span style="font-size:0.75rem;color:var(--text-sub);font-weight:400;">（勾选后展开编辑引导词）</span></div>
+
+                <div class="ai-guide-module">
+                    <label class="ai-guide-header">
+                        <input type="checkbox" name="aiModule" value="basic" checked>
+                        <span class="guide-tag">basic</span><span class="guide-title">基础信息</span>
+                    </label>
+                    <div class="ai-guide-body">
+                        <textarea id="guide_basic">为角色设计完整基础档案：中英文名、合理的年龄生日、星座性别身高。设计2-3个身份标签、1-2个人设类型，以及外界对他/她的评价。</textarea>
+                    </div>
+                </div>
+
+                <div class="ai-guide-module">
+                    <label class="ai-guide-header">
+                        <input type="checkbox" name="aiModule" value="background" checked>
+                        <span class="guide-tag">background</span><span class="guide-title">背景故事</span>
+                    </label>
+                    <div class="ai-guide-body">
+                        <textarea id="guide_background">分阶段为角色设计连贯且有戏剧张力的成长经历，注意前后因果呼应，塑造性格形成的逻辑链。</textarea>
+                    </div>
+                </div>
+
+                <div class="ai-guide-module">
+                    <label class="ai-guide-header">
+                        <input type="checkbox" name="aiModule" value="appearance" checked>
+                        <span class="guide-tag">appearance</span><span class="guide-title">外貌穿着</span>
+                    </label>
+                    <div class="ai-guide-body">
+                        <textarea id="guide_appearance">细致描写发型发色、眼睛、皮肤、脸型体型特点，以及正装、休闲、日常、居家的穿着搭配。</textarea>
+                    </div>
+                </div>
+
+                <div class="ai-guide-module">
+                    <label class="ai-guide-header">
+                        <input type="checkbox" name="aiModule" value="personality" checked>
+                        <span class="guide-tag">personality</span><span class="guide-title">性格特质</span>
+                    </label>
+                    <div class="ai-guide-body">
+                        <textarea id="guide_personality">设计角色的核心性格（需有反差感）、恋爱中的性格表现、弱点/缺陷、喜恶以及人生目标。</textarea>
+                    </div>
+                </div>
+
+                <div class="ai-guide-module">
+                    <label class="ai-guide-header">
+                        <input type="checkbox" name="aiModule" value="behavior" checked>
+                        <span class="guide-tag">behavior</span><span class="guide-title">行为习惯</span>
+                    </label>
+                    <div class="ai-guide-body">
+                        <textarea id="guide_behavior">生活/工作习惯、不同情绪时的表现、关系边界差异、以及各种技能。行为细节要具体生动。</textarea>
+                    </div>
+                </div>
+
+                <div class="ai-guide-module">
+                    <label class="ai-guide-header">
+                        <input type="checkbox" name="aiModule" value="speech" checked>
+                        <span class="guide-tag">speech</span><span class="guide-title">说话风格</span>
+                    </label>
+                    <div class="ai-guide-body">
+                        <textarea id="guide_speech">语气和用词特点、整体风格说明、口音特点、以及网络聊天时的风格。</textarea>
+                    </div>
+                </div>
+
+                <div class="ai-guide-module">
+                    <label class="ai-guide-header">
+                        <input type="checkbox" name="aiModule" value="extra">
+                        <span class="guide-tag">extra</span><span class="guide-title">额外补充</span>
+                    </label>
+                    <div class="ai-guide-body">
+                        <textarea id="guide_extra">口头禅、小动作、心理创伤、核心价值观、内心矛盾、秘密、重要人际关系等深层细节。</textarea>
+                    </div>
+                </div>
+
+                <div class="ai-guide-module">
+                    <label class="ai-guide-header">
+                        <input type="checkbox" name="aiModule" value="nsfw">
+                        <span class="guide-tag">nsfw</span><span class="guide-title">🔞 NSFW 信息</span>
+                    </label>
+                    <div class="ai-guide-body">
+                        <textarea id="guide_nsfw">性经验、取向、性爱角色/定位、习惯、偏好关键词(Kinks)、雷区/禁止事项。</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ai-block" id="modulePreviewBlock">
+                <div class="json-preview-toggle" id="jsonPreviewToggle" onclick="toggleJsonPreview()">
+                    <span class="arrow">▶</span> 📋 预期返回的 JSON 格式参考
+                </div>
+                <div id="moduleJsonPreview" style="display:none;background:#f8f9fa;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;font-family:Consolas,monospace;font-size:0.8rem;line-height:1.6;white-space:pre-wrap;color:#2d3436;"></div>
+            </div>
+
+            <div class="ai-generate-area">
+                <button type="button" class="btn-ai-generate" id="btnGenerate" onclick="generateWithAI()">🤖 一键生成全部主角人设</button>
+                <span class="ai-status-text" id="aiStatusTextGen"></span>
+            </div>
+        </div>
+
+        <div class="card-section" id="aiRawReplySection" style="display:none">
+            <div class="section-header">
+                <div class="section-icon">📝</div>
+                <h2>AI 人设产出结果</h2>
+            </div>
+            <div class="ai-raw-reply-section">
+                <div class="ai-raw-reply-header">
+                    <h4>生成内容 (JSON)</h4>
+                    <button type="button" class="btn-copy-small" onclick="copyRawReply()">📋 复制全部</button>
+                </div>
+                <div class="ai-raw-reply-content" id="aiRawReplyContent">等待生成…</div>
+            </div>
+        </div>
+
+        <div class="card-section">
+            <div class="section-header">
+                <div class="section-icon">🎬</div>
+                <h2>构建故事开头提示词</h2>
+            </div>
+
+            <div class="ai-block">
+                <div class="ai-block-label"><span class="ai-tag-badge">persona</span> 作者设定（系统提示）</div>
+                <textarea id="aiStoryPersona" rows="3">你是一名专业的轻小说、同人小说作者。擅长根据给定的世界观和主角人设，撰写极具吸引力、充满画面感的故事开头。你的文字优美，节奏紧凑，能够迅速抓住读者的眼球。</textarea>
+            </div>
+
+            <div class="ai-block">
+                <div class="ai-block-label">
+                    <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" id="sendTropeToStory" checked style="accent-color: var(--primary-color);">
+                        <span class="ai-tag-badge">trope</span>
+                        附带本次随机灵感作为切入点
+                    </label>
+                </div>
+            </div>
+
+            <div class="ai-block">
+                <div class="ai-block-label"><span class="ai-tag-badge">request</span> 具体情节要求</div>
+                <textarea id="aiStoryRequest" rows="5">请根据小世界设定和主角信息，写一个大约 800-1500 字的故事开头（第一章）。
+要求：
+1. 直接切入核心冲突或展现世界观的独特魅力。
+2. 充分展现主角们的性格特点与张力，安排他们合理的出场方式。
+3. 文字要有画面感和氛围感，不要平铺直叙地介绍背景。
+4. 结尾留有悬念或情绪余韵。</textarea>
+            </div>
+
+            <div class="ai-generate-area">
+                <button type="button" class="btn-ai-generate" id="btnGenerateStory" onclick="generateStoryWithAI()" style="background: linear-gradient(135deg, #0984e3, #74b9ff); box-shadow: 0 4px 15px rgba(9, 132, 227, 0.4);">📜 生成故事正文</button>
+                <span class="ai-status-text" id="aiStoryStatusText"></span>
+            </div>
+        </div>
+
+        <div class="card-section" id="aiStoryReplySection" style="display:none">
+            <div class="section-header">
+                <div class="section-icon">📖</div>
+                <h2>故事正文产出结果</h2>
+            </div>
+            <div class="ai-raw-reply-section">
+                <div class="ai-raw-reply-header">
+                    <h4>正文内容</h4>
+                    <button type="button" class="btn-copy-small" onclick="copyStoryReply()">📋 复制正文</button>
+                </div>
+                <div class="ai-raw-reply-content" id="aiStoryReplyContent" style="font-family: inherit; font-size: 0.95rem;">等待生成…</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal" id="importModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="importModalTitle">📋 批量导入</h3>
+            <button class="modal-close" onclick="closeImportModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:0.8rem;color:var(--text-sub);margin-bottom:10px;">每行一个词语，空行自动跳过。</p>
+            <textarea id="importTextarea" style="width:100%;min-height:140px;padding:12px;border:1px solid var(--border-color);border-radius:var(--radius-sm);"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-modal-cancel" onclick="closeImportModal()">取消</button>
+            <button type="button" class="btn-modal-confirm" onclick="confirmImport()">确认导入</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // ============================================================
+    //  公用工具
+    // ============================================================
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg; toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+    function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+    function escapeHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ============================================================
+    //  Tabs 切换
+    // ============================================================
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        });
+    });
+
+    // ============================================================
+    //  小世界模块逻辑
+    // ============================================================
+    const LS_WORLDS = 'ss_worlds';
+    const LS_CUR_WORLD = 'ss_current_world';
+
+    function getWorlds() { try { return JSON.parse(localStorage.getItem(LS_WORLDS)) || {}; } catch(e) { return {}; } }
+    function saveWorlds(worlds) { localStorage.setItem(LS_WORLDS, JSON.stringify(worlds)); }
+    function getCurWorldId() { return localStorage.getItem(LS_CUR_WORLD) || null; }
+    function setCurWorldId(id) { localStorage.setItem(LS_CUR_WORLD, id); }
+
+    function initWorldSystem() {
+        let worlds = getWorlds();
+        let currentId = getCurWorldId();
+        if (Object.keys(worlds).length === 0) {
+            const id = generateId();
+            worlds[id] = { name: '默认世界', setting: '', protagonists: [] };
+            saveWorlds(worlds); currentId = id; setCurWorldId(id);
+        }
+        if (!worlds[currentId]) { currentId = Object.keys(worlds)[0]; setCurWorldId(currentId); }
+        renderWorldSelect(worlds, currentId);
+        loadWorldData(currentId);
+    }
+
+    function renderWorldSelect(worlds, currentId) {
+        const sel = document.getElementById('worldSelect');
+        sel.innerHTML = '';
+        Object.entries(worlds).forEach(([id, w]) => {
+            const opt = document.createElement('option');
+            opt.value = id; opt.textContent = w.name;
+            if (id === currentId) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    function switchWorld(id) {
+        setCurWorldId(id); loadWorldData(id);
+    }
+
+    function addWorld() {
+        const name = prompt('新世界名称：', '新世界'); if (!name) return;
+        const worlds = getWorlds(); const id = generateId();
+        worlds[id] = { name: name.trim(), setting: '', protagonists: [] };
+        saveWorlds(worlds); setCurWorldId(id);
+        renderWorldSelect(worlds, id); loadWorldData(id);
+        showToast('✨ 已新建世界');
+    }
+
+    function renameWorld() {
+        const id = getCurWorldId(); if (!id) return;
+        const worlds = getWorlds(); const oldName = worlds[id]?.name || '';
+        const name = prompt('重命名世界：', oldName);
+        if (!name || name.trim() === oldName) return;
+        worlds[id].name = name.trim(); saveWorlds(worlds);
+        renderWorldSelect(worlds, id); showToast('✏️ 已重命名');
+    }
+
+    function deleteWorld() {
+        const id = getCurWorldId(); if (!id) return;
+        const worlds = getWorlds();
+        if (Object.keys(worlds).length <= 1) { alert('至少保留一个世界！'); return; }
+        if (!confirm(`确定删除「${worlds[id]?.name}」吗？`)) return;
+        delete worlds[id]; saveWorlds(worlds);
+        const newId = Object.keys(worlds)[0]; setCurWorldId(newId);
+        renderWorldSelect(worlds, newId); loadWorldData(newId);
+        showToast('🗑️ 已删除世界');
+    }
+
+    function loadWorldData(id) {
+        const worlds = getWorlds(); const w = worlds[id]; if(!w) return;
+        document.getElementById('worldSetting').value = w.setting || '';
+        renderProtagonists(w.protagonists || []);
+    }
+
+    function renderProtagonists(list) {
+        const container = document.getElementById('protagonistsContainer');
+        container.innerHTML = '';
+        list.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'protagonist-card';
+            div.innerHTML = `
+            <button type="button" class="btn-remove" onclick="removeProtagonist('${p.id}')">✕</button>
+            <div class="prota-header">
+                <input type="text" placeholder="主角姓名..." value="${escapeHtml(p.name)}" oninput="updateProta('${p.id}', 'name', this.value)">
+                <select onchange="updateProta('${p.id}', 'role', this.value)">
+                    <option value="攻" ${p.role === '攻' ? 'selected' : ''}>主角攻</option>
+                    <option value="受" ${p.role === '受' ? 'selected' : ''}>主角受</option>
+                    <option value="互攻" ${p.role === '互攻' ? 'selected' : ''}>互攻</option>
+                    <option value="其他" ${p.role === '其他' ? 'selected' : ''}>其他/无定</option>
+                </select>
+            </div>
+            <textarea placeholder="简要人设描述 (外貌、性格、身份等)..." oninput="updateProta('${p.id}', 'brief', this.value)">${escapeHtml(p.brief)}</textarea>
+        `;
+            container.appendChild(div);
+        });
+    }
+
+    function addProtagonist() {
+        const id = getCurWorldId(); const worlds = getWorlds();
+        if (!worlds[id].protagonists) worlds[id].protagonists = [];
+        worlds[id].protagonists.push({ id: generateId(), name: '', role: '攻', brief: '' });
+        saveWorlds(worlds); renderProtagonists(worlds[id].protagonists);
+    }
+
+    function removeProtagonist(pId) {
+        const id = getCurWorldId(); const worlds = getWorlds();
+        worlds[id].protagonists = worlds[id].protagonists.filter(p => p.id !== pId);
+        saveWorlds(worlds); renderProtagonists(worlds[id].protagonists);
+    }
+
+    function updateProta(pId, key, val) {
+        const id = getCurWorldId(); const worlds = getWorlds();
+        const p = worlds[id].protagonists.find(p => p.id === pId);
+        if (p) { p[key] = val; saveWorlds(worlds); }
+    }
+
+    function autoSaveWorld() {
+        const id = getCurWorldId(); const worlds = getWorlds();
+        if (worlds[id]) {
+            worlds[id].setting = document.getElementById('worldSetting').value;
+            saveWorlds(worlds);
+        }
+    }
+
+    // ============================================================
+    //  灵感池 & 起名器
+    // ============================================================
+    const LS_INSPO = 'ss_inspo_pool';
+    const LS_INSPO_LAST = 'ss_inspo_last';
+    const LS_SURNAMES = 'ss_surnames';
+    const LS_CHARNAMES = 'ss_charnames';
+    const DEFAULT_SURNAMES  = ['李','王','张','刘','陈','杨','赵','黄','周','吴','徐','孙','朱','马','胡','郭','林','何','高','梁','郑','谢','宋','唐','许','韩','冯','邓','曹','彭','曾','萧','田','董','袁','潘','于','蒋','蔡','余','杜','叶','程','苏','魏','吕','丁','任','沈','姚','卢','姜','崔','钟','谭','陆','汪','范','白','廖','秦','金','江','史','顾','侯','邵','孟','龙','万','段','漕','钱','汤','尹','黎','易','常','武','乔','贺','赖','龚','文'];
+    // 替换为更偏男性的名字字池
+    const DEFAULT_CHARNAMES = ['宇','轩','浩','然','杰','渊','龙','虎','霆','锋','阳','铭','天','辰','风','云','寒','傲','凛','夜','墨','白','泽','炎','昊','苍','剑','影','刃','耀','辉','城','川','山','岳','海','翔','飞','鹏','鹤','修','远','辞','晏','珏','璟','奕','沉','寂'];
+
+    function getInspoPool() { try { return JSON.parse(localStorage.getItem(LS_INSPO)) || []; } catch(e) { return []; } }
+    function saveInspoPool(p) { localStorage.setItem(LS_INSPO, JSON.stringify(p)); }
+    function getLastInspo() { try { return JSON.parse(localStorage.getItem(LS_INSPO_LAST)) || []; } catch(e) { return []; } }
+    function saveLastInspo(p) { localStorage.setItem(LS_INSPO_LAST, JSON.stringify(p || [])); }
+
+    function renderInspoTags() {
+        const pool = getInspoPool(); const current = getLastInspo();
+        const container = document.getElementById('inspoTags'); container.innerHTML = '';
+        if (pool.length === 0) { container.innerHTML = '<span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>'; return; }
+        pool.forEach((word, i) => {
+            const tag = document.createElement('span');
+            tag.className = 'inspo-tag' + (current.includes(word) ? ' selected' : '');
+            tag.onclick = () => toggleInspoWord(word);
+            tag.innerHTML = `${escapeHtml(word)}<span class="inspo-tag-del" onclick="removeInspoWord(${i}, event)">×</span>`;
+            container.appendChild(tag);
+        });
+    }
+
+    function addInspoWord() {
+        const input = document.getElementById('inspoInput'); const word = input.value.trim(); if (!word) return;
+        const pool = getInspoPool();
+        if (!pool.includes(word)) { pool.push(word); saveInspoPool(pool); renderInspoTags(); }
+        input.value = ''; input.focus();
+    }
+    function inspoInputKeydown(e) { if(e.key==='Enter'){ e.preventDefault(); addInspoWord(); } }
+
+    function removeInspoWord(idx, e) {
+        e.stopPropagation(); const pool = getInspoPool(); const removed = pool[idx];
+        pool.splice(idx, 1); saveInspoPool(pool);
+        const curr = getLastInspo().filter(w => w !== removed); saveLastInspo(curr);
+        renderInspoTags(); updateCurrentInspoDisplay();
+    }
+    function toggleInspoWord(word) {
+        const curr = getLastInspo(); const idx = curr.indexOf(word);
+        if(idx >= 0) curr.splice(idx,1); else curr.push(word);
+        saveLastInspo(curr); renderInspoTags(); updateCurrentInspoDisplay();
+    }
+    function clearCurrentInspo() { saveLastInspo([]); renderInspoTags(); updateCurrentInspoDisplay(); showToast('🧹 已清空灵感'); }
+    function clearInspoPool() { if(confirm('清空词库？')){ saveInspoPool([]); saveLastInspo([]); renderInspoTags(); updateCurrentInspoDisplay(); } }
+    function rollInspo() {
+        const pool = getInspoPool(); if(!pool.length){ showToast('词库为空'); return; }
+        const count = Math.min(parseInt(document.getElementById('rollCount').value)||4, pool.length);
+        const shuffled = [...pool].sort(()=>0.5 - Math.random());
+        const picked = shuffled.slice(0, count);
+        saveLastInspo(picked); updateCurrentInspoDisplay(); renderInspoTags();
+        const res = document.getElementById('inspoRollResult'); res.innerHTML = '';
+        picked.forEach((w, i) => {
+            const t = document.createElement('span'); t.className = 'inspo-rolled-tag';
+            t.style.animationDelay = (i*0.07)+'s'; t.textContent = w; res.appendChild(t);
+        });
+    }
+
+    function updateCurrentInspoDisplay() {
+        const words = getLastInspo();
+        const container = document.getElementById('currentInspoTags'); container.innerHTML = '';
+        if(!words.length) { container.innerHTML = '<span class="current-inspo-empty">尚未选择灵感词条</span>'; }
+        else { words.forEach(w => { const t = document.createElement('span'); t.className = 'current-inspo-tag'; t.textContent = w; container.appendChild(t); }); }
+
+        // 同步到 AI 提示词框
+        const tropeInput = document.getElementById('aiTrope');
+        if (tropeInput) tropeInput.value = words.join(' / ');
+    }
+
+    // 起名器
+    function getNamerPool(type) { try { return JSON.parse(localStorage.getItem(type==='surname'?LS_SURNAMES:LS_CHARNAMES)) || []; } catch(e){return [];} }
+    function saveNamerPool(type, p) { localStorage.setItem(type==='surname'?LS_SURNAMES:LS_CHARNAMES, JSON.stringify(p)); }
+    function renderNamerTags(type) {
+        const pool = getNamerPool(type); const container = document.getElementById(type+'Pool'); container.innerHTML = '';
+        if(!pool.length) { container.innerHTML = `<span class="namer-tag-empty">还没有${type==='surname'?'姓氏':'字'}～</span>`; return; }
+        pool.forEach((w,i) => {
+            const t = document.createElement('span'); t.className = `namer-tag ${type}`;
+            t.innerHTML = `${escapeHtml(w)}<span class="namer-tag-del" onclick="removeNamerWord('${type}',${i})">×</span>`; container.appendChild(t);
+        });
+    }
+    function addNamerWord(type) {
+        const input = document.getElementById(type+'Input'); const words = input.value.trim().split('').filter(c=>c.trim()); if(!words.length) return;
+        const pool = getNamerPool(type); words.forEach(w => { if(!pool.includes(w)) pool.push(w); });
+        saveNamerPool(type, pool); renderNamerTags(type); input.value=''; input.focus();
+    }
+    function namerInputKeydown(e, t) { if(e.key==='Enter'){ e.preventDefault(); addNamerWord(t); } }
+    function removeNamerWord(type, idx) { const p = getNamerPool(type); p.splice(idx,1); saveNamerPool(type,p); renderNamerTags(type); }
+    function clearNamerPool(type) { if(confirm('确定清空？')){ saveNamerPool(type,[]); renderNamerTags(type); } }
+    function loadDefaultSurnames() { const p = [...new Set([...getNamerPool('surname'), ...DEFAULT_SURNAMES])]; saveNamerPool('surname', p); renderNamerTags('surname'); }
+    function loadDefaultCharnames() { const p = [...new Set([...getNamerPool('charname'), ...DEFAULT_CHARNAMES])]; saveNamerPool('charname', p); renderNamerTags('charname'); }
+
+    function rollNames() {
+        const surs = getNamerPool('surname'), chars = getNamerPool('charname');
+        if(!surs.length || !chars.length){ showToast('姓氏或字池为空'); return; }
+        const len = parseInt(document.getElementById('nameLength').value) - 1;
+        const count = parseInt(document.getElementById('nameCount').value) || 6;
+        const res = document.getElementById('namerResult'); res.innerHTML='';
+        for(let i=0; i<count; i++){
+            const s = surs[Math.floor(Math.random()*surs.length)];
+            let c = ''; for(let j=0; j<len; j++) c += chars[Math.floor(Math.random()*chars.length)];
+            const fullName = s + c;
+            const t = document.createElement('span'); t.className = 'namer-rolled-name';
+            t.textContent = fullName; t.title = '点击复制'; t.style.animationDelay = (i*0.06)+'s';
+            t.onclick = () => { navigator.clipboard.writeText(fullName).then(()=>showToast('📋 已复制：'+fullName)); };
+            res.appendChild(t);
+        }
+    }
+
+    // 批量导入逻辑
+    let importTypeTarget = 'inspo'; // inspo | surname | charname
+    function openImportModal(type = 'inspo') {
+        importTypeTarget = type;
+        document.getElementById('importModalTitle').textContent = type === 'inspo' ? '📋 批量导入灵感' : '📋 批量导入' + (type==='surname'?'姓氏':'名字字');
+        document.getElementById('importTextarea').value = '';
+        document.getElementById('importModal').classList.add('active');
+    }
+    function closeImportModal() { document.getElementById('importModal').classList.remove('active'); }
+    function confirmImport() {
+        const raw = document.getElementById('importTextarea').value;
+        const words = raw.split(/[\n,，\s]+/).map(w=>w.trim()).filter(w=>w);
+        if(!words.length){ closeImportModal(); return; }
+
+        if(importTypeTarget === 'inspo') {
+            const pool = getInspoPool(); words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
+            saveInspoPool(pool); renderInspoTags();
+        } else {
+            const pool = getNamerPool(importTypeTarget); words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
+            saveNamerPool(importTypeTarget, pool); renderNamerTags(importTypeTarget);
+        }
+        closeImportModal(); showToast('✅ 导入成功');
+    }
+
+    // ============================================================
+    //  AI 配置与生成模块
+    // ============================================================
+    const LS_AI_PROVIDERS = 'ss_ai_providers';
+    const LS_AI_CURRENT_P = 'ss_ai_cur_provider';
+    let selectedModel = '';
+    let currentAbortController = null;
+
+    function getProviders() { try { return JSON.parse(localStorage.getItem(LS_AI_PROVIDERS)) || {}; } catch(e) { return {}; } }
+    function saveProviders(p) { localStorage.setItem(LS_AI_PROVIDERS, JSON.stringify(p)); }
+    function getCurProvId() { return localStorage.getItem(LS_AI_CURRENT_P) || null; }
+    function setCurProvId(id) { localStorage.setItem(LS_AI_CURRENT_P, id); }
+
+    function initProviderSystem() {
+        let providers = getProviders(); let currentId = getCurProvId();
+        if(Object.keys(providers).length === 0){
+            const id = generateId(); providers[id] = { name:'默认供应商', baseUrl:'', apiKey:'', selectedModel:'' };
+            saveProviders(providers); currentId = id; setCurProvId(id);
+        }
+        if(!providers[currentId]){ currentId = Object.keys(providers)[0]; setCurProvId(currentId); }
+        renderProviderSelect(providers, currentId); loadProviderConfig(currentId);
+    }
+    function renderProviderSelect(providers, currentId) {
+        const sel = document.getElementById('providerSelect'); sel.innerHTML='';
+        Object.entries(providers).forEach(([id,p])=>{
+            const opt = document.createElement('option'); opt.value = id; opt.textContent = p.name;
+            if(id===currentId) opt.selected = true; sel.appendChild(opt);
+        });
+    }
+    function switchProvider(id) { saveCurrentProviderConfig(); setCurProvId(id); loadProviderConfig(id); document.getElementById('modelList').innerHTML=''; setApiStatus('',''); selectedModel=''; }
+    function loadProviderConfig(id) {
+        const p = getProviders()[id]; if(!p) return;
+        document.getElementById('aiBaseUrl').value = p.baseUrl||''; document.getElementById('aiApiKey').value = p.apiKey||'';
+        selectedModel = p.selectedModel||''; document.getElementById('modelList').innerHTML='';
+        if(selectedModel) setApiStatus('','上次选择的模型: '+selectedModel); else setApiStatus('','');
+    }
+    function saveCurrentProviderConfig() {
+        const id = getCurProvId(); if(!id) return; const p = getProviders(); if(!p[id]) return;
+        p[id].baseUrl = document.getElementById('aiBaseUrl').value.trim(); p[id].apiKey = document.getElementById('aiApiKey').value.trim();
+        p[id].selectedModel = selectedModel||''; saveProviders(p);
+    }
+    function newProvider() {
+        const name = prompt('新建 API 供应商名称：', '新供应商'); if(!name) return; saveCurrentProviderConfig();
+        const p = getProviders(); const id = generateId(); p[id] = {name:name.trim(), baseUrl:'', apiKey:'', selectedModel:''};
+        saveProviders(p); setCurProvId(id); renderProviderSelect(p, id); loadProviderConfig(id); showToast('✨ 已新建供应商');
+    }
+    function renameProvider() {
+        const id = getCurProvId(); const p = getProviders(); const name = prompt('重命名供应商：', p[id]?.name||'');
+        if(!name || name.trim()===p[id].name) return; p[id].name=name.trim(); saveProviders(p); renderProviderSelect(p, id);
+    }
+    function deleteProvider() {
+        const id = getCurProvId(); const p = getProviders(); if(Object.keys(p).length<=1){ alert('至少保留一个！'); return; }
+        if(!confirm(`删除供应商？`)) return; delete p[id]; saveProviders(p);
+        const newId = Object.keys(p)[0]; setCurProvId(newId); renderProviderSelect(p, newId); loadProviderConfig(newId);
+    }
+    function toggleApiKey() { const inp = document.getElementById('aiApiKey'); inp.type = inp.type === 'password' ? 'text' : 'password'; }
+    async function fetchModels() {
+        const baseUrl = document.getElementById('aiBaseUrl').value.trim().replace(/\/+$/, '');
+        const apiKey = document.getElementById('aiApiKey').value.trim();
+        if(!baseUrl) { showToast('请填写 API 地址'); return; }
+        setApiStatus('loading','正在获取...'); document.getElementById('modelList').innerHTML=''; selectedModel='';
+        try {
+            const res = await fetch(`${baseUrl}/v1/models`, { headers: {'Authorization':`Bearer ${apiKey}`, 'Content-Type':'application/json'} });
+            if(!res.ok) throw new Error(`HTTP ${res.status}`); const data = await res.json();
+            const models = (data.data || data.models || []).map(m => m.id || m).filter(Boolean);
+            if(!models.length) throw new Error('无可用模型'); setApiStatus('valid', `已连接 · ${models.length} 个模型`);
+            renderModelList(models); saveCurrentProviderConfig();
+        } catch(err) { setApiStatus('invalid', `失败：${err.message}`); }
+    }
+    function setApiStatus(state, text) {
+        document.getElementById('apiDot').className = 'api-dot ' + state; document.getElementById('apiStatusText').textContent = text;
+    }
+    function renderModelList(models) {
+        const list = document.getElementById('modelList'); list.innerHTML='';
+        models.forEach(id => {
+            const card = document.createElement('div'); card.className = 'model-card'; card.dataset.model = id;
+            card.innerHTML = `<span class="model-dot"></span>${escapeHtml(id)}`;
+            card.onclick = () => { document.querySelectorAll('.model-card').forEach(c=>c.classList.remove('selected')); card.classList.add('selected'); selectedModel = id; saveCurrentProviderConfig(); };
+            list.appendChild(card); if(!selectedModel) card.click();
+        });
+    }
+
+    // JSON Schema 生成规则
+    const MODULE_JSON_SCHEMA = {
+        basic: `    "basic": { "char_name":"", "chinese_name":"", "nickname":"", "age":"", "birthday_date":"", "birthday_zodiac":"", "gender":"", "height":"", "identity":[], "archetype":[], "social":[] }`,
+        background: `    "background": { "childhood_range":"0-12岁", "childhood":[], "teenage_range":"13-18岁", "teenage":[], "youth_range":"19-24岁", "youth":[], "current_range":"", "current":[] }`,
+        appearance: `    "appearance": { "hair":"", "eyes":"", "skin":"", "face_style":"", "build":[], "attire_formal":"", "attire_business":"", "attire_casual":"", "attire_home":"" }`,
+        personality: `    "personality": { "core_traits":[], "romantic_traits":[], "weakness":[], "likes":[], "dislikes":[], "goals":[] }`,
+        behavior: `    "behavior": { "lifestyle":[], "work_behaviors":[], "emotional_angry":"", "emotional_happy":"", "emotional_sad":"", "boundaries":[], "work_skills":[], "life_skills":[], "hobby_skills":[] }`,
+        speech: `    "speech": { "speech_style":"", "speech_reasoning":"", "speech_accent":"", "speech_online":"" }`,
+        extra: `    "extra": { "additional_notes":"", "catchphrases":[], "mannerisms":[], "trauma":[], "values":[], "conflicts":[], "secrets":[], "relationships":[], "defining_moments":[] }`,
+        nsfw: `    "nsfw": { "experiences":"", "sexual_orientation":"", "sexual_role":[], "sexual_habits":[], "kinks":[], "limits":[] }`
+    };
+
+    function getSelectedModules() { return Array.from(document.querySelectorAll('input[name="aiModule"]:checked')).map(el=>el.value); }
+    function toggleJsonPreview() {
+        const preview = document.getElementById('moduleJsonPreview'); const toggle = document.getElementById('jsonPreviewToggle');
+        if(preview.style.display==='none'){ preview.style.display=''; toggle.classList.add('open'); updateModulePreview(); }
+        else { preview.style.display='none'; toggle.classList.remove('open'); }
+    }
+    function updateModulePreview() {
+        const el = document.getElementById('moduleJsonPreview'); if(!el || el.style.display==='none') return;
+        const modules = getSelectedModules(); if(!modules.length){ el.textContent='未勾选'; return; }
+        const lines = modules.map(m => MODULE_JSON_SCHEMA[m] || '').filter(Boolean);
+        el.textContent = '{\n  "某某主角的名字": {\n' + lines.join(',\n') + '\n  }\n}';
+    }
+    document.querySelectorAll('input[name="aiModule"]').forEach(cb => cb.addEventListener('change', updateModulePreview));
+
+    function copyRawReply() {
+        const content = document.getElementById('aiRawReplyContent').textContent;
+        navigator.clipboard.writeText(content).then(() => showToast('📋 已复制生成内容'));
+    }
+
+    // 触发 AI 生成
+    async function generateWithAI() {
+        const baseUrl = document.getElementById('aiBaseUrl').value.trim().replace(/\/+$/, '');
+        const apiKey = document.getElementById('aiApiKey').value.trim();
+        const persona = document.getElementById('aiPersona').value.trim();
+        const sendTrope = document.getElementById('sendTropeToAi').checked;
+        const trope = document.getElementById('aiTrope').value.trim();
+        const modules = getSelectedModules();
+        const useStream = document.getElementById('enableStream').checked;
+
+        // 获取小世界信息
+        const wId = getCurWorldId(); const wData = getWorlds()[wId];
+        if(!wData || wData.protagonists.length === 0){ showToast('请至少在小世界中添加一名主角！'); return; }
+        const wSetting = wData.setting || '无详细世界观说明';
+        const protosText = wData.protagonists.map(p => `【主角】：${p.name || '未命名'} \n【属性/定位】：${p.role} \n【设定简述】：${p.brief}`).join('\n\n');
+
+        if(!baseUrl){ showToast('请填写 API 地址'); return; }
+        if(!selectedModel){ showToast('请选择模型'); return; }
+        if(!modules.length){ showToast('请勾选生成模块'); return; }
+
+        const btn = document.getElementById('btnGenerate'); btn.disabled = true;
+        const rawReplySection = document.getElementById('aiRawReplySection'); rawReplySection.style.display = '';
+        const rawReplyEl = document.getElementById('aiRawReplyContent'); rawReplyEl.textContent = '⏳ 生成中，请稍候…';
+        document.getElementById('aiStatusTextGen').textContent = '⏳ 正在请求 API...';
+
+        // 拼装 Prompt
+        const guideTexts = modules.map(m => {
+            const text = document.getElementById('guide_'+m)?.value.trim(); return text ? `[${m}]：${text}` : '';
+        }).filter(Boolean);
+
+        const schemaStr = '{\n  "该主角的名字": {\n' + modules.map(m => MODULE_JSON_SCHEMA[m] || '').join(',\n') + '\n  }\n}';
+
+        const systemMsg = `<persona>\n${persona}\n</persona>`;
+        const userMsg = `
+<world_setting>
+${wSetting}
+</world_setting>
+
+<protagonists_to_generate>
+${protosText}
+</protagonists_to_generate>
+
+${(sendTrope && trope) ? `<trope>\n随机灵感：${trope}\n</trope>\n` : ''}
+
+<module_guides>
+${guideTexts.join('\n')}
+</module_guides>
+
+<instructions>
+请结合【world_setting】和【trope】，为【protagonists_to_generate】里的【每一位】主角进行丰富完善，生成详细的人设卡。
+【注意：你需要将每一个主角的数据放到同一个 JSON 对象中，使用各自的名字作为顶级键名！】
+请严格按照以下 JSON 格式结构返回，不要输出任何 Markdown 标记或多余的解释文字。列表字段提供 2-5 个精炼描述。
+
+参考结构：
+${schemaStr}
+</instructions>
+`;
+
+        try {
+            if(useStream) await generateStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl);
+            else await generateNonStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl);
+            document.getElementById('aiStatusTextGen').textContent = '✅ 生成完成！';
+        } catch(err) {
+            console.error(err); document.getElementById('aiStatusTextGen').textContent = `❌ 出错：${err.message}`;
+        } finally {
+            btn.disabled = false; currentAbortController = null;
+        }
+    }
+
+    async function generateNonStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl) {
+        const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+            method:'POST', headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}`},
+            body: JSON.stringify({ model: selectedModel, messages: [ {role:'system', content:systemMsg}, {role:'user', content:userMsg} ], temperature: 0.85 })
+        });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const content = data.choices?.[0]?.message?.content || '';
+        rawReplyEl.textContent = content.trim();
+    }
+
+    async function generateStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl) {
+        currentAbortController = new AbortController();
+        const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+            method:'POST', headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}`},
+            body: JSON.stringify({ model: selectedModel, messages: [ {role:'system', content:systemMsg}, {role:'user', content:userMsg} ], temperature: 0.85, stream: true }),
+            signal: currentAbortController.signal
+        });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const reader = res.body.getReader(); const decoder = new TextDecoder();
+        let fullText = ''; let buffer = ''; rawReplyEl.textContent = '';
+
+        while(true) {
+            const {done, value} = await reader.read(); if(done) break;
+            buffer += decoder.decode(value, {stream:true});
+            const lines = buffer.split('\n'); buffer = lines.pop();
+            for(const line of lines){
+                const trimmed = line.trim(); if(!trimmed.startsWith('data:')) continue;
+                const dataStr = trimmed.slice(5).trim(); if(dataStr==='[DONE]') continue;
+                try {
+                    const chunk = JSON.parse(dataStr); const delta = chunk.choices?.[0]?.delta?.content||'';
+                    if(delta){ fullText += delta; rawReplyEl.textContent = fullText; rawReplyEl.scrollTop = rawReplyEl.scrollHeight; }
+                } catch(e){}
+            }
+        }
+        if(!fullText) throw new Error('流式传输未返回内容');
+    }
+
+    // ============================================================
+    //  故事开头生成逻辑
+    // ============================================================
+    function copyStoryReply() {
+        const content = document.getElementById('aiStoryReplyContent').textContent;
+        navigator.clipboard.writeText(content).then(() => showToast('📋 已复制故事正文'));
+    }
+
+    async function generateStoryWithAI() {
+        const baseUrl = document.getElementById('aiBaseUrl').value.trim().replace(/\/+$/, '');
+        const apiKey = document.getElementById('aiApiKey').value.trim();
+        const persona = document.getElementById('aiStoryPersona').value.trim();
+        const sendTrope = document.getElementById('sendTropeToStory').checked;
+        const trope = getLastInspo().join(' / '); // 直接读取最新抽取的灵感
+        const request = document.getElementById('aiStoryRequest').value.trim();
+        const useStream = document.getElementById('enableStream').checked;
+
+        // 获取小世界信息
+        const wId = getCurWorldId(); const wData = getWorlds()[wId];
+        if(!wData || wData.protagonists.length === 0){ showToast('请至少在小世界中添加一名主角！'); return; }
+        const wSetting = wData.setting || '无详细世界观说明';
+        const protosText = wData.protagonists.map(p => `【主角】：${p.name || '未命名'} \n【属性/定位】：${p.role} \n【设定简述】：${p.brief}`).join('\n\n');
+
+        if(!baseUrl){ showToast('请填写 API 地址'); return; }
+        if(!selectedModel){ showToast('请选择模型'); return; }
+        if(!request){ showToast('具体要求不能为空'); return; }
+
+        const btn = document.getElementById('btnGenerateStory'); btn.disabled = true;
+        const replySection = document.getElementById('aiStoryReplySection'); replySection.style.display = '';
+        const replyEl = document.getElementById('aiStoryReplyContent'); replyEl.textContent = '⏳ 构思情节中，请稍候…';
+        document.getElementById('aiStoryStatusText').textContent = '⏳ 正在请求 API...';
+
+        const systemMsg = `<persona>\n${persona}\n</persona>`;
+        const userMsg = `
+<world_setting>
+${wSetting}
+</world_setting>
+
+<protagonists>
+${protosText}
+</protagonists>
+
+${(sendTrope && trope) ? `<trope>\n随机灵感：${trope}\n请务必将以上灵感词汇融入作为本章情节的切入点。\n</trope>\n` : ''}
+
+<instructions>
+${request}
+</instructions>
+`;
+
+        try {
+            if(useStream) await generateStream(baseUrl, apiKey, systemMsg, userMsg, replyEl);
+            else await generateNonStream(baseUrl, apiKey, systemMsg, userMsg, replyEl);
+            document.getElementById('aiStoryStatusText').textContent = '✅ 生成完成！';
+        } catch(err) {
+            console.error(err); document.getElementById('aiStoryStatusText').textContent = `❌ 出错：${err.message}`;
+        } finally {
+            btn.disabled = false; currentAbortController = null;
+        }
+    }
+
+    // ============================================================
+    //  初始化加载
+    // ============================================================
+    initWorldSystem();
+    renderInspoTags();
+    updateCurrentInspoDisplay();
+    renderNamerTags('surname');
+    renderNamerTags('charname');
+    initProviderSystem();
+</script>
+</body>
+</html>
