@@ -317,7 +317,8 @@
                     <span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>
                 </div>
                 <div class="inspo-actions">
-                    <button type="button" class="btn-inspo-import" onclick="openImportModal()">📋 批量导入</button>
+                    <button type="button" class="btn-inspo-import" onclick="loadDefaultInspos()">载入默认</button>
+                    <button type="button" class="btn-inspo-import" onclick="openImportModal('inspo')">📋 批量导入</button>
                     <button type="button" class="btn-inspo-clear" onclick="clearInspoPool()">清空词库</button>
                 </div>
             </div>
@@ -529,7 +530,7 @@
                         <span class="guide-tag">nsfw</span><span class="guide-title">🔞 NSFW 信息</span>
                     </label>
                     <div class="ai-guide-body">
-                        <textarea id="guide_nsfw">性经验、取向、性爱角色/定位、习惯、偏好关键词(Kinks)、雷区/禁止事项。</textarea>
+                        <textarea id="guide_nsfw">请补全角色的NSFW信息，保持成人向虚构创作语境：1) 性相关特征：性经验、性取向、性爱角色/定位（2-4条）、性爱习惯（2-4条）；2) 性癖/Kinks：给出3-8条偏好关键词或短句；3) 雷区/禁止事项（Limits）：给出3-8条明确边界。描述保持可用于角色卡的结构化表达，避免空泛。</textarea>
                     </div>
                 </div>
             </div>
@@ -552,7 +553,7 @@
                 <div class="section-icon">📝</div>
                 <h2>AI 人设产出结果</h2>
             </div>
-            <div class="ai-raw-reply-section">
+            <div class="ai-raw-reply-section" id="aiRawReplyWrapper">
                 <div class="ai-raw-reply-header">
                     <h4>生成内容 (JSON)</h4>
                     <button type="button" class="btn-copy-small" onclick="copyRawReply()">📋 复制全部</button>
@@ -584,12 +585,13 @@
 
             <div class="ai-block">
                 <div class="ai-block-label"><span class="ai-tag-badge">request</span> 具体情节要求</div>
-                <textarea id="aiStoryRequest" rows="5">请根据小世界设定和主角信息，写一个大约 800-1500 字的故事开头（第一章）。
+                <textarea id="aiStoryRequest" rows="5">请根据小世界设定和主角信息，写一个大约 200 字的故事开头（第一章）。
 要求：
 1. 直接切入核心冲突或展现世界观的独特魅力。
 2. 充分展现主角们的性格特点与张力，安排他们合理的出场方式。
 3. 文字要有画面感和氛围感，不要平铺直叙地介绍背景。
-4. 结尾留有悬念或情绪余韵。</textarea>
+4. 故事可以在主角相遇初始或相遇后，或者相恋时，结婚后等不同的时间线
+5. 故事走向可以朝着nsfw方向发展。</textarea>
             </div>
 
             <div class="ai-generate-area">
@@ -789,9 +791,15 @@
     const LS_INSPO_LAST = 'ss_inspo_last';
     const LS_SURNAMES = 'ss_surnames';
     const LS_CHARNAMES = 'ss_charnames';
-    const DEFAULT_SURNAMES  = ['李','王','张','刘','陈','杨','赵','黄','周','吴','徐','孙','朱','马','胡','郭','林','何','高','梁','郑','谢','宋','唐','许','韩','冯','邓','曹','彭','曾','萧','田','董','袁','潘','于','蒋','蔡','余','杜','叶','程','苏','魏','吕','丁','任','沈','姚','卢','姜','崔','钟','谭','陆','汪','范','白','廖','秦','金','江','史','顾','侯','邵','孟','龙','万','段','漕','钱','汤','尹','黎','易','常','武','乔','贺','赖','龚','文'];
+
+    // 默认灵感词库
+    const DEFAULT_INSPOS = [
+        "先婚后爱", "带球跑", "替身白月光", "双向暗恋", "欢喜冤家", "豪门世家", "娱乐圈", "ABO设定", "无限流", "穿书", "系统", "重生", "快穿", "末世", "修仙", "都市异闻", "双向奔赴", "暗恋成真", "竹马竹马", "天降竹马", "强强", "虐恋情深", "相爱相杀", "契约情人", "豪门联姻", "网恋奔现", "破镜重圆", "追妻火葬场", "情敌变情人", "双向救赎", "日久生情", "一见钟情", "因恨生爱", "替身情人", "白月光归来", "火葬场追妻", "带球跑文学", "追夫火葬场", "恶龙与公主", "阴鸷攻", "温柔攻", "病娇攻", "腹黑攻", "忠犬攻", "霸道攻", "阳光开朗大男孩攻", "偏执欲攻", "斯文败类攻", "高冷冰山攻", "年下小狼狗攻", "年下奶狗攻", "疯批攻", "爹系攻", "傲娇攻", "古板受", "钓系受", "健气受", "憨憨受", "团宠受", "壮受", "清冷美人受", "女王受", "诱受", "人妻受", "美强惨受", "高岭之花受", "美攻强受", "美攻壮受", "强强", "弱攻强受", "年上", "年下", "养成", "叔侄", "兄弟", "骨科", "父子", "星际", "科幻", "奇幻", "西幻", "古代", "民国", "现代", "乡土", "悬疑", "惊悚", "灵异", "种田", "经商", "宫斗", "权谋", "江湖", "高干", "职场", "黑道", "卧底", "杀手", "人外", "怪物", "神明", "凤凰男", "赘婿", "金丝雀", "笼中鸟", "霸总软妹", "痞帅", "斯文败类", "禁欲系", "钓系", "直球", "弯恋直", "直掰弯", "双向暗恋", "暗恋成真", "破镜重圆", "追妻火葬场", "追夫火葬场", "情敌变情人", "宿敌变情人", "兄弟变情人", "仇人变情人", "替身变真爱", "白月光变朱砂痣", "修罗场", "买股文", "炒股文", "万人迷", "np", "1v1", "团宠", "炮灰逆袭", "配角翻身", "重生救赎", "穿书攻略", "系统逼我做任务", "系统教我谈恋爱", "无限流生存", "末世求生", "末世囤货", "修仙飞升", "修仙日常", "都市职场", "都市情缘", "校园暗恋", "校园甜宠", "古风虐恋", "古风权谋", "民国烽烟", "民国爱恋", "西方罗曼", "东方玄幻", "青梅竹马", "天降克青梅", "破镜重圆后", "离婚后复合", "分手后追妻", "失忆后重逢", "白月光回头"
+    ];
+
+    const DEFAULT_SURNAMES  = ['顾','林','陆','沈','裴','贺','谢','江','傅','霍','厉','封','盛','季','宗','闻','薄','容','苏','晏','楚','萧','燕','祁','景','宁','桑','戚','越','岑','谈','郁','申','隋','诸','湛','蔺','商','秦','牧','应','白','时','向','黎','司','莫','言','唐','周','魏','韩','卓','凌','柯','宣','简','舒','喻','墨','原','池','项','单','席','路','左','余','安','乔','夏','秋','温','步','狄','卫','任','赫','滕','万','乐','年','展','曲','练','叶','迟','计','解','巫','伏','段','连','官','楼','云','宫','元','仲','严','常','武','蓝','金','冷','仇','殷','屠','房','庞','龚','屈','樊','芮','邢','倪','吉','谷','闵','卞','寇','郜','骆','曾','庄','蒲'];
     // 替换为更偏男性的名字字池
-    const DEFAULT_CHARNAMES = ['宇','轩','浩','然','杰','渊','龙','虎','霆','锋','阳','铭','天','辰','风','云','寒','傲','凛','夜','墨','白','泽','炎','昊','苍','剑','影','刃','耀','辉','城','川','山','岳','海','翔','飞','鹏','鹤','修','远','辞','晏','珏','璟','奕','沉','寂'];
+    const DEFAULT_CHARNAMES = ['凛','寒','霄','霆','绝','骁','肃','彻','锋','渊','冥','沉','屹','舟','渡','重','衍','淮','深','予','衡','厉','封','寂','狂','傲','夜','苍','诀','冥','肆','镇','北','枭','乾','璟','瑜','辞','砚','墨','谦','尘','宁','意','疏','清','浅','筠','逸','怀','远','锦','昭','钰','如','予','时','珩','兰','芷','容','雅','颂','书','其','微','君','言','舒','白','朗','阳','灿','晖','燃','乐','朝','星','遇','野','川','原','禾','跃','凡','卓','鸣','晨','曦','旭','瑞','嘉','骏','帆','凯','航','昂','飞','瀚','景','诚','毅','博','拓','述','望','策','呈','寻','既','斯','逾','庭','弈','叙','既','临','予','慕','呈','裴','迟','越','陆','沈','顾','席','季','商','封','傅','闻','景','薄','晏','楚','萧','秦','谢'];
 
     function getInspoPool() { try { return JSON.parse(localStorage.getItem(LS_INSPO)) || []; } catch(e) { return []; } }
     function saveInspoPool(p) { localStorage.setItem(LS_INSPO, JSON.stringify(p)); }
@@ -818,6 +826,14 @@
         input.value = ''; input.focus();
     }
     function inspoInputKeydown(e) { if(e.key==='Enter'){ e.preventDefault(); addInspoWord(); } }
+
+    function loadDefaultInspos() {
+        const pool = getInspoPool();
+        const newPool = [...new Set([...pool, ...DEFAULT_INSPOS])];
+        saveInspoPool(newPool);
+        renderInspoTags();
+        showToast('✅ 已载入默认灵感词库');
+    }
 
     function removeInspoWord(idx, e) {
         e.stopPropagation(); const pool = getInspoPool(); const removed = pool[idx];
@@ -1028,8 +1044,102 @@
     document.querySelectorAll('input[name="aiModule"]').forEach(cb => cb.addEventListener('change', updateModulePreview));
 
     function copyRawReply() {
-        const content = document.getElementById('aiRawReplyContent').textContent;
-        navigator.clipboard.writeText(content).then(() => showToast('📋 已复制生成内容'));
+        const el = document.getElementById('aiRawReplyContent');
+        if (el) {
+            navigator.clipboard.writeText(el.textContent).then(() => showToast('📋 已复制生成内容'));
+        }
+    }
+
+    // 将完整的JSON字符串解析并渲染成单独的角色块
+    function parseAndSplitProtagonistsReply(fullText) {
+        let cleanText = fullText.trim();
+        // 去除可能的 markdown 代码块标记
+        if (cleanText.startsWith('```')) {
+            const match = cleanText.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (match) cleanText = match[1].trim();
+        }
+
+        try {
+            const parsed = JSON.parse(cleanText);
+            // 确保是一个对象，且包含键值
+            if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+                const keys = Object.keys(parsed);
+                if (keys.length > 0) {
+                    const wrapper = document.getElementById('aiRawReplyWrapper');
+                    wrapper.innerHTML = '';
+
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'ai-raw-reply-header';
+
+                    const titleH4 = document.createElement('h4');
+                    titleH4.textContent = '生成内容 (按主角拆分)';
+
+                    const copyAllBtn = document.createElement('button');
+                    copyAllBtn.type = 'button';
+                    copyAllBtn.className = 'btn-copy-small';
+                    copyAllBtn.textContent = '📋 复制全部原始 JSON';
+                    copyAllBtn.onclick = () => {
+                        navigator.clipboard.writeText(cleanText).then(() => showToast('📋 已复制全部 JSON 内容'));
+                    };
+
+                    headerDiv.appendChild(titleH4);
+                    headerDiv.appendChild(copyAllBtn);
+                    wrapper.appendChild(headerDiv);
+
+                    // 为每个主角生成单独的面版
+                    keys.forEach(key => {
+                        const charData = parsed[key];
+                        const charJsonStr = JSON.stringify(charData, null, 2);
+
+                        const charDiv = document.createElement('div');
+                        charDiv.style.marginBottom = '16px';
+                        charDiv.style.border = '1px solid var(--border-color)';
+                        charDiv.style.borderRadius = 'var(--radius-sm)';
+                        charDiv.style.padding = '12px';
+                        charDiv.style.background = '#ffffff';
+
+                        const charHeader = document.createElement('div');
+                        charHeader.style.display = 'flex';
+                        charHeader.style.justifyContent = 'space-between';
+                        charHeader.style.alignItems = 'center';
+                        charHeader.style.marginBottom = '8px';
+                        charHeader.style.paddingBottom = '8px';
+                        charHeader.style.borderBottom = '1px dashed #f0f0f0';
+
+                        const charTitle = document.createElement('h5');
+                        charTitle.style.fontSize = '0.95rem';
+                        charTitle.style.color = 'var(--primary-color)';
+                        charTitle.textContent = `📝 主角：${key}`;
+
+                        const charCopyBtn = document.createElement('button');
+                        charCopyBtn.type = 'button';
+                        charCopyBtn.className = 'btn-copy-small';
+                        charCopyBtn.textContent = '📋 复制该角色人设';
+                        charCopyBtn.onclick = () => {
+                            navigator.clipboard.writeText(charJsonStr).then(() => showToast(`📋 已复制 ${key} 的人设`));
+                        };
+
+                        charHeader.appendChild(charTitle);
+                        charHeader.appendChild(charCopyBtn);
+                        charDiv.appendChild(charHeader);
+
+                        const charContent = document.createElement('div');
+                        charContent.className = 'ai-raw-reply-content';
+                        charContent.style.minHeight = 'auto';
+                        charContent.style.maxHeight = '300px';
+                        charContent.style.border = 'none';
+                        charContent.style.padding = '0';
+                        charContent.style.margin = '0';
+                        charContent.textContent = charJsonStr;
+
+                        charDiv.appendChild(charContent);
+                        wrapper.appendChild(charDiv);
+                    });
+                }
+            }
+        } catch (e) {
+            console.log('API 返回结果未完全遵循 JSON 结构或解析失败，保持整体显示。', e);
+        }
     }
 
     // 触发 AI 生成
@@ -1053,8 +1163,18 @@
         if(!modules.length){ showToast('请勾选生成模块'); return; }
 
         const btn = document.getElementById('btnGenerate'); btn.disabled = true;
+
+        // 重置和展现生成面版
         const rawReplySection = document.getElementById('aiRawReplySection'); rawReplySection.style.display = '';
-        const rawReplyEl = document.getElementById('aiRawReplyContent'); rawReplyEl.textContent = '⏳ 生成中，请稍候…';
+        const rawReplyWrapper = document.getElementById('aiRawReplyWrapper');
+        rawReplyWrapper.innerHTML = `
+            <div class="ai-raw-reply-header">
+                <h4>生成内容 (JSON)</h4>
+                <button type="button" class="btn-copy-small" onclick="copyRawReply()">📋 复制全部</button>
+            </div>
+            <div class="ai-raw-reply-content" id="aiRawReplyContent">⏳ 生成中，请稍候…</div>
+        `;
+        const rawReplyEl = document.getElementById('aiRawReplyContent');
         document.getElementById('aiStatusTextGen').textContent = '⏳ 正在请求 API...';
 
         // 拼装 Prompt
@@ -1094,6 +1214,10 @@ ${schemaStr}
             if(useStream) await generateStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl);
             else await generateNonStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl);
             document.getElementById('aiStatusTextGen').textContent = '✅ 生成完成！';
+
+            // 生成完毕后尝试解析结构并分拆展示
+            parseAndSplitProtagonistsReply(rawReplyEl.textContent);
+
         } catch(err) {
             console.error(err); document.getElementById('aiStatusTextGen').textContent = `❌ 出错：${err.message}`;
         } finally {
