@@ -307,21 +307,43 @@
 
     <div class="tab-content active" id="tab-inspo">
         <div class="inspo-panel">
-            <div class="inspo-pool-box">
-                <h3>🌀 灵感词库 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub); margin-left: 10px;">(点击词条即可添加/移除)</span></h3>
+
+            <!-- 人设词库 -->
+            <div class="inspo-pool-box" style="margin-bottom: 16px;">
+                <h3>🎭 人设词库 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub); margin-left: 10px;">(点击词条即可添加/移除)</span></h3>
                 <div class="inspo-input-row">
-                    <input type="text" id="inspoInput" placeholder="输入自己的词语，按 Enter 添加…" onkeydown="inspoInputKeydown(event)">
-                    <button type="button" class="btn-inspo-add" onclick="addInspoWord()">➕ 添加</button>
+                    <input type="text" id="personaInput" placeholder="输入人设词语，按 Enter 添加…" onkeydown="inspoInputKeydown(event, 'persona')">
+                    <button type="button" class="btn-inspo-add" onclick="addInspoWord('persona')">➕ 添加</button>
                 </div>
-                <div class="inspo-tags" id="inspoTags">
+                <div class="inspo-tags" id="personaTags">
                     <span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>
                 </div>
                 <div class="inspo-actions">
-                    <button type="button" class="btn-inspo-import" onclick="loadDefaultInspos()">载入默认词库</button>
-                    <button type="button" class="btn-inspo-import" onclick="openImportModal('inspo')">📋 批量导入</button>
-                    <button type="button" class="btn-inspo-clear" onclick="clearInspoPool()">清空词库</button>
+                    <button type="button" class="btn-inspo-import" onclick="loadDefaultInspos('persona')">载入默认词库</button>
+                    <button type="button" class="btn-inspo-import" onclick="openImportModal('persona')">📋 批量导入</button>
+                    <button type="button" class="btn-inspo-import" onclick="exportInspoPool('persona')">📤 导出词库</button>
+                    <button type="button" class="btn-inspo-clear" onclick="clearInspoPool('persona')">清空词库</button>
                 </div>
             </div>
+
+            <!-- 类型词库 -->
+            <div class="inspo-pool-box">
+                <h3>🏷️ 类型词库 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub); margin-left: 10px;">(点击词条即可添加/移除)</span></h3>
+                <div class="inspo-input-row">
+                    <input type="text" id="tropeInput" placeholder="输入类型词语，按 Enter 添加…" onkeydown="inspoInputKeydown(event, 'trope')">
+                    <button type="button" class="btn-inspo-add" onclick="addInspoWord('trope')">➕ 添加</button>
+                </div>
+                <div class="inspo-tags" id="tropeTags">
+                    <span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>
+                </div>
+                <div class="inspo-actions">
+                    <button type="button" class="btn-inspo-import" onclick="loadDefaultInspos('trope')">载入默认词库</button>
+                    <button type="button" class="btn-inspo-import" onclick="openImportModal('trope')">📋 批量导入</button>
+                    <button type="button" class="btn-inspo-import" onclick="exportInspoPool('trope')">📤 导出词库</button>
+                    <button type="button" class="btn-inspo-clear" onclick="clearInspoPool('trope')">清空词库</button>
+                </div>
+            </div>
+
         </div>
 
         <div class="namer-panel">
@@ -665,7 +687,7 @@
     // ============================================================
     //  小世界模块逻辑
     // ============================================================
-    const LS_WORLDS = 'ss_worlds_v2'; // 更新 key 避免冲突
+    const LS_WORLDS = 'ss_worlds_v2';
     const LS_CUR_WORLD = 'ss_current_world_v2';
 
     function getWorlds() { try { return JSON.parse(localStorage.getItem(LS_WORLDS)) || {}; } catch(e) { return {}; } }
@@ -792,58 +814,91 @@
     // ============================================================
     //  灵感池 & 起名器
     // ============================================================
-    const LS_INSPO = 'ss_inspo_pool_v2';
+    const LS_INSPO_PERSONA = 'ss_inspo_persona_v3';
+    const LS_INSPO_TROPE = 'ss_inspo_trope_v3';
     const LS_INSPO_LAST = 'ss_inspo_last_v2';
     const LS_SURNAMES = 'ss_surnames_v2';
     const LS_CHARNAMES = 'ss_charnames_v2';
 
-    // 默认灵感词库
-    const DEFAULT_INSPOS = [
-        "先婚后爱", "带球跑", "替身白月光", "双向暗恋", "欢喜冤家", "豪门世家", "娱乐圈", "ABO设定", "无限流", "穿书", "系统", "重生", "快穿", "末世", "修仙", "都市异闻", "双向奔赴", "暗恋成真", "竹马竹马", "天降竹马", "强强", "虐恋情深", "相爱相杀", "契约情人", "豪门联姻", "网恋奔现", "破镜重圆", "追妻火葬场", "情敌变情人", "双向救赎", "日久生情", "一见钟情", "因恨生爱", "替身情人", "白月光归来", "火葬场追妻", "带球跑文学", "追夫火葬场", "恶龙与公主", "阴鸷攻", "温柔攻", "病娇攻", "腹黑攻", "忠犬攻", "霸道攻", "阳光开朗大男孩攻", "偏执欲攻", "斯文败类攻", "高冷冰山攻", "年下小狼狗攻", "年下奶狗攻", "疯批攻", "爹系攻", "傲娇攻", "古板受", "钓系受", "健气受", "憨憨受", "团宠受", "壮受", "清冷美人受", "女王受", "诱受", "人妻受", "美强惨受", "高岭之花受", "美攻强受", "美攻壮受", "强强", "弱攻强受", "年上", "年下", "养成", "叔侄", "兄弟", "骨科", "父子", "星际", "科幻", "奇幻", "西幻", "古代", "民国", "现代", "乡土", "悬疑", "惊悚", "灵异", "种田", "经商", "宫斗", "权谋", "江湖", "高干", "职场", "黑道", "卧底", "杀手", "人外", "怪物", "神明", "凤凰男", "赘婿", "金丝雀", "笼中鸟", "霸总软妹", "痞帅", "斯文败类", "禁欲系", "钓系", "直球", "弯恋直", "直掰弯", "双向暗恋", "暗恋成真", "破镜重圆", "追妻火葬场", "追夫火葬场", "情敌变情人", "宿敌变情人", "兄弟变情人", "仇人变情人", "替身变真爱", "白月光变朱砂痣", "修罗场", "买股文", "炒股文", "万人迷", "np", "1v1", "团宠", "炮灰逆袭", "配角翻身", "重生救赎", "穿书攻略", "系统逼我做任务", "系统教我谈恋爱", "无限流生存", "末世求生", "末世囤货", "修仙飞升", "修仙日常", "都市职场", "都市情缘", "校园暗恋", "校园甜宠", "古风虐恋", "古风权谋", "民国烽烟", "民国爱恋", "西方罗曼", "东方玄幻", "青梅竹马", "天降克青梅", "破镜重圆后", "离婚后复合", "分手后追妻", "失忆后重逢", "白月光回头"
+    // 默认灵感词库 - 人设
+    const DEFAULT_PERSONA = [
+        "高冷禁欲攻","温柔腹黑攻","病娇偏执攻","年下狼犬攻","年下忠犬攻","爹系男友攻",
+        "雅痞流氓攻","清冷仙尊攻","阴鸷权臣攻","傲娇纯情攻","疯批美人攻","深情硬汉攻",
+        "毒舌金主攻","沉稳老干部攻","阳光健气受","咸鱼摆烂受","傲娇女王受","温润如玉受",
+        "病弱受","白切黑诱受","小太阳受","武力值爆表受","清贫学霸受","迟钝天然呆受",
+        "社恐宅男受","毒舌吐槽受","明艳张扬受"
+    ];
+
+    // 默认灵感词库 - 类型
+    const DEFAULT_TROPE = [
+        "情敌变情人","死对头变真爱","宿敌相爱相杀","先婚后爱","契约恋爱","破镜重圆",
+        "追妻火葬场","单向暗恋转双向","青梅竹马抵不过天降","替身文学","白月光竟是我自己",
+        "救赎与被救赎","相依为命","美攻壮受","强强","年下养成","体型差","肤色差",
+        "高岭之花下神坛","双向奔赴","年上","年下","一见钟情","日久生情","暗恋成真",
+        "双向暗恋"
     ];
 
     const DEFAULT_SURNAMES  = ['顾','林','陆','沈','裴','贺','谢','江','傅','霍','厉','封','盛','季','宗','闻','薄','容','苏','晏','楚','萧','燕','祁','景','宁','桑','戚','越','岑','谈','郁','申','隋','诸','湛','蔺','商','秦','牧','应','白','时','向','黎','司','莫','言','唐','周','魏','韩','卓','凌','柯','宣','简','舒','喻','墨','原','池','项','单','席','路','左','余','安','乔','夏','秋','温','步','狄','卫','任','赫','滕','万','乐','年','展','曲','练','叶','迟','计','解','巫','伏','段','连','官','楼','云','宫','元','仲','严','常','武','蓝','金','冷','仇','殷','屠','房','庞','龚','屈','樊','芮','邢','倪','吉','谷','闵','卞','寇','郜','骆','曾','庄','蒲'];
     const DEFAULT_CHARNAMES = ['凛','寒','霄','霆','绝','骁','肃','彻','锋','渊','冥','沉','屹','舟','渡','重','衍','淮','深','予','衡','厉','封','寂','狂','傲','夜','苍','诀','冥','肆','镇','北','枭','乾','璟','瑜','辞','砚','墨','谦','尘','宁','意','疏','清','浅','筠','逸','怀','远','锦','昭','钰','如','予','时','珩','兰','芷','容','雅','颂','书','其','微','君','言','舒','白','朗','阳','灿','晖','燃','乐','朝','星','遇','野','川','原','禾','跃','凡','卓','鸣','晨','曦','旭','瑞','嘉','骏','帆','凯','航','昂','飞','瀚','景','诚','毅','博','拓','述','望','策','呈','寻','既','斯','逾','庭','弈','叙','既','临','予','慕','呈','裴','迟','越','陆','沈','顾','席','季','商','封','傅','闻','景','薄','晏','楚','萧','秦','谢'];
 
-    function getInspoPool() { try { return JSON.parse(localStorage.getItem(LS_INSPO)) || []; } catch(e) { return []; } }
-    function saveInspoPool(p) { localStorage.setItem(LS_INSPO, JSON.stringify(p)); }
+    function getInspoPool(category) {
+        const key = category === 'persona' ? LS_INSPO_PERSONA : LS_INSPO_TROPE;
+        try { return JSON.parse(localStorage.getItem(key)) || []; } catch(e) { return []; }
+    }
+    function saveInspoPool(category, p) {
+        const key = category === 'persona' ? LS_INSPO_PERSONA : LS_INSPO_TROPE;
+        localStorage.setItem(key, JSON.stringify(p));
+    }
     function getLastInspo() { try { return JSON.parse(localStorage.getItem(LS_INSPO_LAST)) || []; } catch(e) { return []; } }
     function saveLastInspo(p) { localStorage.setItem(LS_INSPO_LAST, JSON.stringify(p || [])); }
 
-    function renderInspoTags() {
-        const pool = getInspoPool(); const current = getLastInspo();
-        const container = document.getElementById('inspoTags'); container.innerHTML = '';
-        if (pool.length === 0) { container.innerHTML = '<span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>'; return; }
+    function renderInspoTags(category) {
+        const pool = getInspoPool(category);
+        const current = getLastInspo();
+        const container = document.getElementById(category + 'Tags');
+        container.innerHTML = '';
+        if (pool.length === 0) {
+            container.innerHTML = '<span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>';
+            return;
+        }
         pool.forEach((word, i) => {
             const tag = document.createElement('span');
             tag.className = 'inspo-tag' + (current.includes(word) ? ' selected' : '');
             tag.onclick = () => toggleInspoWord(word);
-            tag.innerHTML = `${escapeHtml(word)}<span class="inspo-tag-del" onclick="removeInspoWord(${i}, event)">×</span>`;
+            tag.innerHTML = `${escapeHtml(word)}<span class="inspo-tag-del" onclick="removeInspoWord('${category}', ${i}, event)">×</span>`;
             container.appendChild(tag);
         });
     }
 
-    function addInspoWord() {
-        const input = document.getElementById('inspoInput'); const word = input.value.trim(); if (!word) return;
-        const pool = getInspoPool();
-        if (!pool.includes(word)) { pool.push(word); saveInspoPool(pool); renderInspoTags(); }
+    function addInspoWord(category) {
+        const input = document.getElementById(category + 'Input');
+        const word = input.value.trim();
+        if (!word) return;
+        const pool = getInspoPool(category);
+        if (!pool.includes(word)) { pool.push(word); saveInspoPool(category, pool); renderInspoTags(category); }
         input.value = ''; input.focus();
     }
-    function inspoInputKeydown(e) { if(e.key==='Enter'){ e.preventDefault(); addInspoWord(); } }
+    function inspoInputKeydown(e, category) { if(e.key==='Enter'){ e.preventDefault(); addInspoWord(category); } }
 
-    function loadDefaultInspos() {
-        const pool = getInspoPool();
-        const newPool = [...new Set([...pool, ...DEFAULT_INSPOS])];
-        saveInspoPool(newPool);
-        renderInspoTags();
-        showToast('✅ 已载入默认灵感词库');
+    function loadDefaultInspos(category) {
+        const pool = getInspoPool(category);
+        const defaults = category === 'persona' ? DEFAULT_PERSONA : DEFAULT_TROPE;
+        const newPool = [...new Set([...pool, ...defaults])];
+        saveInspoPool(category, newPool);
+        renderInspoTags(category);
+        showToast(`✅ 已载入默认${category === 'persona' ? '人设' : '类型'}词库`);
     }
 
-    function removeInspoWord(idx, e) {
-        e.stopPropagation(); const pool = getInspoPool(); const removed = pool[idx];
-        pool.splice(idx, 1); saveInspoPool(pool);
-        const curr = getLastInspo().filter(w => w !== removed); saveLastInspo(curr);
-        renderInspoTags(); updateCurrentInspoDisplay();
+    function removeInspoWord(category, idx, e) {
+        e.stopPropagation();
+        const pool = getInspoPool(category);
+        const removed = pool[idx];
+        pool.splice(idx, 1);
+        saveInspoPool(category, pool);
+        const curr = getLastInspo().filter(w => w !== removed);
+        saveLastInspo(curr);
+        renderInspoTags(category);
+        updateCurrentInspoDisplay();
     }
 
     // 切换选中状态（在词库点击，或在顶部已选区域点击）
@@ -854,10 +909,35 @@
         } else {
             curr.push(word); // 添加
         }
-        saveLastInspo(curr); renderInspoTags(); updateCurrentInspoDisplay();
+        saveLastInspo(curr);
+        renderInspoTags('persona');
+        renderInspoTags('trope');
+        updateCurrentInspoDisplay();
     }
 
-    function clearInspoPool() { if(confirm('清空词库？(不会清空已选的灵感)')){ saveInspoPool([]); renderInspoTags(); } }
+    function clearInspoPool(category) {
+        const name = category === 'persona' ? '人设' : '类型';
+        if(confirm(`清空${name}词库？(不会清空已选的灵感)`)){
+            saveInspoPool(category, []);
+            renderInspoTags(category);
+        }
+    }
+
+    function exportInspoPool(category) {
+        const pool = getInspoPool(category);
+        if(pool.length === 0) { showToast('词库为空，无法导出'); return; }
+        const text = pool.join('\n');
+        const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (category === 'persona' ? '人设词库' : '类型词库') + '.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✅ 已导出');
+    }
 
     // 更新顶部展示区
     function updateCurrentInspoDisplay() {
@@ -921,10 +1001,16 @@
     }
 
     // 批量导入逻辑
-    let importTypeTarget = 'inspo'; // inspo | surname | charname
-    function openImportModal(type = 'inspo') {
+    let importTypeTarget = 'persona'; // persona | trope | surname | charname
+    function openImportModal(type = 'persona') {
         importTypeTarget = type;
-        document.getElementById('importModalTitle').textContent = type === 'inspo' ? '📋 批量导入灵感' : '📋 批量导入' + (type==='surname'?'姓氏':'名字字');
+        let title = '📋 批量导入';
+        if(type === 'persona') title = '📋 批量导入人设';
+        else if(type === 'trope') title = '📋 批量导入类型';
+        else if(type === 'surname') title = '📋 批量导入姓氏';
+        else if(type === 'charname') title = '📋 批量导入名字字';
+
+        document.getElementById('importModalTitle').textContent = title;
         document.getElementById('importTextarea').value = '';
         document.getElementById('importModal').classList.add('active');
     }
@@ -934,12 +1020,16 @@
         const words = raw.split(/[\n,，\s]+/).map(w=>w.trim()).filter(w=>w);
         if(!words.length){ closeImportModal(); return; }
 
-        if(importTypeTarget === 'inspo') {
-            const pool = getInspoPool(); words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
-            saveInspoPool(pool); renderInspoTags();
+        if(importTypeTarget === 'persona' || importTypeTarget === 'trope') {
+            const pool = getInspoPool(importTypeTarget);
+            words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
+            saveInspoPool(importTypeTarget, pool);
+            renderInspoTags(importTypeTarget);
         } else {
-            const pool = getNamerPool(importTypeTarget); words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
-            saveNamerPool(importTypeTarget, pool); renderNamerTags(importTypeTarget);
+            const pool = getNamerPool(importTypeTarget);
+            words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
+            saveNamerPool(importTypeTarget, pool);
+            renderNamerTags(importTypeTarget);
         }
         closeImportModal(); showToast('✅ 导入成功');
     }
@@ -1333,7 +1423,8 @@ ${request}
     //  初始化加载
     // ============================================================
     initWorldSystem();
-    renderInspoTags();
+    renderInspoTags('persona');
+    renderInspoTags('trope');
     updateCurrentInspoDisplay();
     renderNamerTags('surname');
     renderNamerTags('charname');
