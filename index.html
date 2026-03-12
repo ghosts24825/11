@@ -4,262 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>小说人设生成器</title>
-    <!-- 引入 Supabase 库 -->
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            /* 整体修改为淡蓝色系 */
-            --primary-color: #3498db;
-            --primary-light: #e6f2ff;
-            --primary-hover: #2980b9;
-            --bg-color: #f0f7fd;
-            --card-bg: #ffffff;
-            --text-main: #2c3e50;
-            --text-sub: #7f8c8d;
-            --border-color: #d6eaf8;
-            --input-bg: #fdfefe;
-            --radius-md: 14px;
-            --radius-sm: 8px;
-            --shadow: 0 6px 12px rgba(52, 152, 219, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background-color: var(--bg-color);
-            background-image: linear-gradient(135deg, #f0f7fd 0%, #e1effa 100%);
-            color: var(--text-main);
-            line-height: 1.6;
-            padding: 30px 20px;
-            min-height: 100vh;
-        }
-
-        .container { max-width: 1000px; margin: 0 auto; }
-
-        header { text-align: center; margin-bottom: 25px; }
-        header h1 { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 8px; letter-spacing: 1px; font-weight: 800; text-shadow: 0 2px 4px rgba(52,152,219,0.1); }
-        header p { color: var(--text-sub); font-size: 0.95rem; }
-
-        /* ===== Content Cards ===== */
-        .card-section {
-            background: var(--card-bg);
-            border-radius: var(--radius-md);
-            padding: 24px;
-            margin-bottom: 25px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-color);
-        }
-
-        .section-header {
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 20px; padding-bottom: 12px;
-            border-bottom: 2px solid #f4f9fd;
-        }
-        .section-icon {
-            width: 38px; height: 38px;
-            background: var(--primary-light); color: var(--primary-color);
-            border-radius: 12px; display: flex; align-items: center;
-            justify-content: center; font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-        .section-header h2 { font-size: 1.25rem; color: var(--text-main); font-weight: 700; }
-
-        /* ===== 小世界模块 ===== */
-        .world-manager {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
-        }
-        .world-manager select {
-            flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 600;
-            color: var(--primary-color); background: var(--input-bg); cursor: pointer;
-        }
-        .btn-wm { border: none; cursor: pointer; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
-        .btn-wm-add { background: var(--primary-color); color: #fff; }
-        .btn-wm-add:hover { background: var(--primary-hover); transform: translateY(-1px); }
-        .btn-wm-rename { background: #f0f4f8; color: var(--text-main); }
-        .btn-wm-rename:hover { background: #e2e8f0; }
-        .btn-wm-del { background: #fff0f0; color: #e74c3c; border: 1px solid #fadbd8; }
-        .btn-wm-del:hover { background: #fdedec; }
-
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-main); font-size: 0.95rem; }
-        input[type="text"], input[type="password"], textarea, select {
-            width: 100%; padding: 10px 14px; border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm); background: var(--input-bg); color: var(--text-main);
-            font-size: 0.95rem; transition: all 0.2s ease;
-        }
-        input:focus, textarea:focus, select:focus {
-            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15); background: #fff;
-        }
-        textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
-
-        .protagonist-list { display: flex; flex-direction: column; gap: 16px; }
-        .protagonist-card {
-            background: #fcfdfe; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px; transition: box-shadow 0.2s;
-        }
-        .protagonist-card:hover { box-shadow: 0 4px 12px rgba(52, 152, 219, 0.08); }
-        .prota-header { display: flex; gap: 12px; margin-bottom: 12px; }
-        .prota-header input { flex: 2; border-color: #e1e8ed; }
-        .prota-header select { flex: 1; min-width: 100px; border-color: #e1e8ed; }
-
-        .btn-add-full {
-            width: 100%; padding: 12px; background: #f8fbff; color: var(--primary-color);
-            border: 2px dashed #aed6f1; border-radius: var(--radius-sm);
-            cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;
-        }
-        .btn-add-full:hover { background: var(--primary-light); border-color: var(--primary-color); }
-
-        /* ===== Tabs ===== */
-        .tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; justify-content: center; }
-        .tab-btn {
-            background: transparent; border: 2px solid transparent; color: var(--text-sub);
-            padding: 10px 28px; border-radius: 30px; cursor: pointer; font-size: 1rem; font-weight: 700; transition: all 0.2s ease;
-        }
-        .tab-btn:hover { background: #e1e8ed; color: var(--text-main); }
-        .tab-btn.active { background: var(--primary-color); color: #fff; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ===== 本次灵感 (全局共享) ===== */
-        .current-inspo-bar {
-            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow);
-            padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
-        }
-        .current-inspo-label { font-weight: 700; color: var(--primary-hover); white-space: nowrap; padding-top: 4px; display: flex; align-items: center; gap: 6px; }
-        .current-inspo-tags { display: flex; flex-wrap: wrap; gap: 10px; flex: 1; min-height: 32px; }
-        .current-inspo-empty { color: #bdc3c7; font-size: 0.9rem; margin-top: 2px; }
-        .current-inspo-tag {
-            display: inline-flex; align-items: center; background: #fff; border: 2px solid var(--primary-color); cursor: pointer;
-            color: var(--primary-hover); padding: 5px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; transition: all 0.2s;
-        }
-        .current-inspo-tag:hover {
-            background: #ffeaa7; border-color: #fdcb6e; color: #d35400; text-decoration: line-through;
-        }
-
-        /* ===== 灵感池 ===== */
-        .inspo-panel { display: block; margin-bottom: 20px; }
-        .inspo-pool-box, .namer-pool-box, .namer-roll-box {
-            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow);
-        }
-        .inspo-pool-box h3, .namer-pool-box h4, .namer-roll-box h4 {
-            font-size: 1.1rem; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-weight: 700;
-        }
-        .inspo-input-row { display: flex; gap: 8px; margin-bottom: 14px; }
-        .btn-inspo-add { padding: 9px 18px; background: var(--primary-color); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; font-size: 0.9rem; white-space: nowrap; transition: background 0.2s; }
-        .btn-inspo-add:hover { background: var(--primary-hover); }
-        .inspo-tags, .namer-tags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 80px; padding: 14px; background: #fbfdff; border-radius: var(--radius-sm); border: 1px dashed var(--border-color); margin-bottom: 12px; max-height: 250px; overflow-y: auto; }
-        .inspo-tag { display: inline-flex; align-items: center; gap: 5px; background: var(--primary-light); color: var(--primary-hover); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .inspo-tag:hover { background: #d6eaf8; }
-        .inspo-tag.selected { background: var(--primary-color); color: #fff; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3); }
-        .inspo-tag-del, .namer-tag-del { cursor: pointer; color: #a9cce3; font-size: 1.1rem; line-height: 1; padding: 0 2px; }
-        .inspo-tag-del:hover, .namer-tag-del:hover { color: #e74c3c; }
-        .inspo-tag-empty, .namer-tag-empty { color: #bdc3c7; font-size: 0.9rem; align-self: center; padding: 4px; width: 100%; text-align: center; }
-        .inspo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-inspo-import { padding: 8px 14px; background: #f0f4f8; color: var(--text-main); border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; }
-        .btn-inspo-import:hover { background: #e2e8f0; }
-        .btn-inspo-clear { padding: 8px 14px; background: #fff0f0; color: #e74c3c; border: 1px solid #fadbd8; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; }
-        .btn-inspo-clear:hover { background: #fdedec; }
-
-        .btn-roll-name { width: 100%; padding: 12px; background: linear-gradient(135deg, #3498db, #2980b9); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 1rem; font-weight: 700; transition: all 0.2s; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); }
-        .btn-roll-name:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4); }
-
-        .namer-panel { margin-top: 20px; }
-        .namer-section-title { font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #f4f9fd; display: flex; align-items: center; gap: 8px; }
-        .namer-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-        .namer-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 14px; font-size: 0.85rem; font-weight: 600; }
-        .namer-tag.surname { background: #e8f8f5; color: #16a085; }
-        .namer-tag.charname { background: #f4ecf7; color: #8e44ad; }
-        .namer-options { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-        .namer-option-group { display: flex; flex-direction: column; gap: 4px; }
-        .namer-option-group label { font-size: 0.75rem; color: var(--text-sub); font-weight: 600; }
-        .namer-option-group select, .namer-option-group input[type="number"] { padding: 6px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 600; color: var(--primary-hover); background: var(--input-bg); min-width: 80px; text-align: center; }
-        .namer-result { flex: 1; min-height: 90px; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; padding: 14px; background: linear-gradient(135deg, #f4f9fd 0%, #eaf2f8 100%); border-radius: var(--radius-sm); border: 1px solid #d6eaf8; margin-bottom: 12px; }
-        .namer-result-empty { color: #bdc3c7; font-size: 0.9rem; align-self: center; width: 100%; text-align: center; }
-        .namer-hint { font-size: 0.8rem; color: #bdc3c7; text-align: center; margin-top: 8px; }
-
-        .namer-rolled-name { display: inline-flex; align-items: center; background: #fff; border: 2px solid var(--primary-color); color: var(--primary-hover); padding: 6px 16px; border-radius: 20px; font-size: 0.95rem; font-weight: 700; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15); animation: rollIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both; cursor: pointer; transition: all 0.2s; }
-        .namer-rolled-name:hover { background: var(--primary-color); color: #fff; }
-        @keyframes rollIn { from { opacity: 0; transform: scale(0.8) translateY(5px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-
-        /* ===== AI 辅助模块 ===== */
-        .ai-config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        .api-key-wrap { display: flex; gap: 8px; }
-        .api-key-wrap input { flex: 1; }
-        .btn-eye { padding: 0 12px; background: #f0f4f8; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; font-size: 1.1rem; transition: background 0.2s; }
-        .btn-eye:hover { background: #e2e8f0; }
-        .btn-fetch-models { padding: 10px 20px; background: #f0f4f8; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; margin-bottom: 14px; color: var(--text-main); }
-        .btn-fetch-models:hover { background: #e2e8f0; border-color: #cbd5e1; }
-        .api-status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 0.85rem; font-weight: 600; color: var(--text-sub); min-height: 22px; }
-        .api-dot { width: 10px; height: 10px; border-radius: 50%; background: #bdc3c7; flex-shrink: 0; transition: background 0.3s; }
-        .api-dot.valid { background: #2ecc71; box-shadow: 0 0 6px rgba(46, 204, 113, 0.4); }
-        .api-dot.invalid { background: #e74c3c; }
-        .api-dot.loading { background: #f1c40f; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% {opacity:1;} 50% {opacity:0.4;} 100% {opacity:1;} }
-
-        .model-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 200px; overflow-y: auto; padding: 4px 0; }
-        .model-card { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border: 2px solid var(--border-color); border-radius: 20px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text-sub); background: #fff; transition: all 0.2s; user-select: none; }
-        .model-card.selected { border-color: var(--primary-color); background: var(--primary-light); color: var(--primary-hover); box-shadow: 0 2px 6px rgba(52, 152, 219, 0.2); }
-        .model-dot { width: 8px; height: 8px; border-radius: 50%; background: #2ecc71; }
-
-        .ai-block { margin-bottom: 22px; }
-        .ai-block-label { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.95rem; color: var(--text-main); margin-bottom: 10px; }
-        .ai-tag-badge { background: #34495e; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; letter-spacing: 0.5px; }
-
-        .ai-guide-module { background: #fbfdff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; }
-        .ai-guide-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; cursor: pointer; user-select: none; }
-        .ai-guide-header input[type="checkbox"] { accent-color: var(--primary-color); width: 16px; height: 16px; cursor: pointer; }
-        .ai-guide-header .guide-title { font-weight: 700; font-size: 0.95rem; color: var(--text-main); }
-        .ai-guide-header .guide-tag { background: #7f8c8d; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-family: monospace; }
-        .ai-guide-body textarea { min-height: 60px; font-size: 0.9rem; border-color: #e1e8ed; }
-
-        .json-preview-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; color: var(--primary-hover); margin-bottom: 10px; padding: 6px 12px; background: var(--primary-light); border-radius: var(--radius-sm); transition: background 0.2s; }
-        .json-preview-toggle:hover { background: #d6eaf8; }
-        .json-preview-toggle .arrow { display: inline-block; transition: transform 0.2s; font-size: 0.8rem; }
-        .json-preview-toggle.open .arrow { transform: rotate(90deg); }
-
-        .stream-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .stream-toggle label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--text-sub); }
-        .stream-toggle input[type="checkbox"] { accent-color: var(--primary-color); width: 16px; height: 16px; }
-
-        .ai-generate-area { display: flex; align-items: center; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
-        .btn-ai-generate { padding: 14px 36px; background: linear-gradient(135deg, #3498db, #2980b9); color: #fff; border: none; border-radius: 30px; cursor: pointer; font-size: 1.05rem; font-weight: 700; box-shadow: 0 4px 15px rgba(52,152,219,0.4); transition: all 0.2s; }
-        .btn-ai-generate:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(52,152,219,0.5); }
-        .btn-ai-generate:disabled { background: #95a5a6; box-shadow: none; transform: none; cursor: not-allowed; }
-        .ai-status-text { font-size: 0.9rem; color: var(--text-sub); font-weight: 600; }
-
-        .ai-raw-reply-section { background: #fbfdff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 16px; }
-        .ai-raw-reply-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dashed #d6eaf8; padding-bottom: 10px; }
-        .ai-raw-reply-header h4 { font-size: 1rem; color: var(--text-main); }
-        .ai-raw-reply-content { font-family: 'Consolas', monospace; font-size: 0.85rem; line-height: 1.6; max-height: 500px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: #2c3e50; background: #fff; border: 1px solid #e1e8ed; border-radius: var(--radius-sm); padding: 14px; min-height: 60px; }
-
-        .btn-copy-small { padding: 6px 14px; background: var(--primary-light); color: var(--primary-hover); border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.2s; }
-        .btn-copy-small:hover { background: #d6eaf8; color: var(--primary-color); }
-
-        /* ===== Modal ===== */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal.active { display: flex; }
-        .modal-content { background: #fff; border-radius: var(--radius-md); width: 90%; max-width: 500px; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-        .modal-header { padding: 20px; border-bottom: 1px solid #f0f4f8; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 20px; overflow-y: auto; }
-        .modal-footer { padding: 16px 20px; border-top: 1px solid #f0f4f8; display: flex; justify-content: flex-end; gap: 10px; background: #fafcff; border-radius: 0 0 var(--radius-md) var(--radius-md); }
-        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #95a5a6; transition: color 0.2s; }
-        .modal-close:hover { color: #e74c3c; }
-        .btn-modal-confirm { padding: 10px 24px; background: var(--primary-color); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; transition: background 0.2s; }
-        .btn-modal-confirm:hover { background: var(--primary-hover); }
-        .btn-modal-cancel { padding: 10px 20px; background: #f0f4f8; color: var(--text-main); border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; transition: background 0.2s; }
-        .btn-modal-cancel:hover { background: #e2e8f0; }
-
-        /* ===== Toast ===== */
-        .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #34495e; color: #fff; padding: 12px 30px; border-radius: 30px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
-
-        @media (max-width: 768px) {
-            .namer-grid, .ai-config-grid { grid-template-columns: 1fr; }
-        }
-    </style>
 </head>
 <body>
 
@@ -274,20 +20,18 @@
 
 <div class="container">
     <header>
+        <div class="theme-switch-wrapper">
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" onclick="toggleTheme()" />
+                <div class="slider round">
+                    <span class="icon-sun">☀️</span>
+                    <span class="icon-moon">🌙</span>
+                </div>
+            </label>
+        </div>
         <h1>小说人设生成器</h1>
         <p>Short Story Character Card Generator</p>
     </header>
-
-    <!-- ===== 创作者用户名/笔名输入模块 ===== -->
-    <div class="card-section" style="padding: 16px 24px; margin-bottom: 25px;">
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <div class="section-icon" style="width: 38px; height: 38px; font-size: 1.1rem;">👤</div>
-            <div style="flex: 1; display: flex; flex-direction: column;">
-                <label for="userNameInput" style="font-size: 0.85rem; color: var(--text-sub); font-weight: 600; margin-bottom: 4px;">创作者用户名 / 笔名</label>
-                <input type="text" id="userNameInput" placeholder="输入您的名字，开启创作之旅..." oninput="saveUserName()" style="padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--input-bg); font-weight: 600; color: var(--primary-hover); transition: all 0.2s;">
-            </div>
-        </div>
-    </div>
 
     <div class="card-section" id="small-world">
         <div class="section-header">
@@ -302,9 +46,10 @@
             <button type="button" class="btn-wm btn-wm-del" onclick="deleteWorld()">🗑️ 删除整个世界</button>
         </div>
 
+        <!-- 详细世界书大纲模块 -->
         <div class="form-group">
-            <label>📖 世界观设定 (背景、规则、氛围)</label>
-            <textarea id="worldSetting" placeholder="例如：这是一个充满魔法与机械的赛博中世纪世界..." oninput="autoSaveWorld()"></textarea>
+            <label>📚 详细世界书大纲 (可手动编写或通过下方 AI 扩写生成)</label>
+            <textarea id="worldWorldbook" placeholder="包含详细的时代背景、特殊设定、NPC关系等...在写正文和生成人设时AI会深度参考这里的内容。" oninput="autoSaveWorld()" style="min-height: 120px; font-family: monospace; font-size: 0.85rem; background: #fdfefe;"></textarea>
         </div>
 
         <div style="margin-top: 25px;">
@@ -331,17 +76,13 @@
 
     <div class="tab-content active" id="tab-inspo">
         <div class="inspo-panel">
-
-            <!-- 人设词库 -->
             <div class="inspo-pool-box" style="margin-bottom: 16px;">
                 <h3>🎭 人设词库 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub); margin-left: 10px;">(点击词条即可添加/移除)</span></h3>
                 <div class="inspo-input-row">
                     <input type="text" id="personaInput" placeholder="输入人设词语，按 Enter 添加…" onkeydown="inspoInputKeydown(event, 'persona')">
                     <button type="button" class="btn-inspo-add" onclick="addInspoWord('persona')">➕ 添加</button>
                 </div>
-                <div class="inspo-tags" id="personaTags">
-                    <span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>
-                </div>
+                <div class="inspo-tags" id="personaTags"><span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span></div>
                 <div class="inspo-actions">
                     <button type="button" class="btn-inspo-import" onclick="loadDefaultInspos('persona')">载入默认词库</button>
                     <button type="button" class="btn-inspo-import" onclick="openImportModal('persona')">📋 批量导入</button>
@@ -350,16 +91,13 @@
                 </div>
             </div>
 
-            <!-- 类型词库 -->
             <div class="inspo-pool-box">
                 <h3>🏷️ 类型词库 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub); margin-left: 10px;">(点击词条即可添加/移除)</span></h3>
                 <div class="inspo-input-row">
                     <input type="text" id="tropeInput" placeholder="输入类型词语，按 Enter 添加…" onkeydown="inspoInputKeydown(event, 'trope')">
                     <button type="button" class="btn-inspo-add" onclick="addInspoWord('trope')">➕ 添加</button>
                 </div>
-                <div class="inspo-tags" id="tropeTags">
-                    <span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>
-                </div>
+                <div class="inspo-tags" id="tropeTags"><span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span></div>
                 <div class="inspo-actions">
                     <button type="button" class="btn-inspo-import" onclick="loadDefaultInspos('trope')">载入默认词库</button>
                     <button type="button" class="btn-inspo-import" onclick="openImportModal('trope')">📋 批量导入</button>
@@ -367,7 +105,6 @@
                     <button type="button" class="btn-inspo-clear" onclick="clearInspoPool('trope')">清空词库</button>
                 </div>
             </div>
-
         </div>
 
         <div class="namer-panel">
@@ -421,6 +158,7 @@
     </div>
 
     <div class="tab-content" id="tab-gen">
+        <!-- API 配置部分 -->
         <div class="card-section">
             <div class="section-header">
                 <div class="section-icon">⚙️</div>
@@ -461,215 +199,180 @@
             </div>
         </div>
 
+        <!-- 功能模式选择卡片 -->
         <div class="card-section">
-            <div class="section-header">
-                <div class="section-icon">✍️</div>
-                <h2>构建人设提示词</h2>
+            <div class="ai-mode-tabs">
+                <button class="ai-mode-btn active" data-mode="char">🎭 构建人设卡</button>
+                <button class="ai-mode-btn" data-mode="world">🌍 扩写世界书</button>
+                <button class="ai-mode-btn" data-mode="story">📜 撰写故事开头</button>
             </div>
 
-            <div class="ai-block">
-                <div class="ai-block-label"><span class="ai-tag-badge">persona</span> 身份定义 / 破甲（系统提示）</div>
-                <textarea id="aiPersona" rows="3">你是一名专业的轻小说、同人小说人设创作助手。擅长创作有深度、有层次、有魅力的角色。你的所有创作均在完全虚拟的文学创作环境中完成，请自由发挥创造力，为用户打造生动立体的虚构主角。</textarea>
-            </div>
-
-            <div class="ai-block">
-                <div class="ai-block-label">
-                    <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" id="sendTropeToAi" checked style="accent-color: var(--primary-color);">
-                        <span class="ai-tag-badge">trope</span>
-                        附带已选灵感
-                    </label>
-                </div>
-                <textarea id="aiTrope" rows="2" readonly placeholder="尚未选择灵感词条，请在第一页点击词条添加"></textarea>
-            </div>
-
-            <!-- 可折叠的模块面板 -->
-            <div class="ai-block">
-                <div class="ai-block-label" style="cursor: pointer; user-select: none; color: var(--primary-hover); background: var(--primary-light); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);" onclick="toggleAiModules()">
-                    <span id="aiModulesToggleArrow" style="display:inline-block; transition: transform 0.2s;">▶</span> 📦 让 AI 帮我生成的详细模块（点击展开/收起进行自定义修改）
+            <!-- ============================================== -->
+            <!-- 模式 1：生成人设卡 -->
+            <!-- ============================================== -->
+            <div id="ai-mode-char" class="ai-mode-content active">
+                <div class="ai-block">
+                    <div class="ai-block-label"><span class="ai-tag-badge">persona</span> 身份定义 / 破甲（系统提示）</div>
+                    <textarea id="aiPersona" rows="3">你是一名专业的轻小说、同人小说人设创作助手。擅长创作有深度、有层次、有魅力的角色。你的所有创作均在完全虚拟的文学创作环境中完成，请自由发挥创造力，为用户打造生动立体的虚构主角。</textarea>
                 </div>
 
-                <div id="aiModulesContainer" style="display: none; margin-top: 14px; padding-left: 8px; border-left: 3px solid var(--primary-light);">
-                    <div class="ai-guide-module">
-                        <label class="ai-guide-header">
-                            <input type="checkbox" name="aiModule" value="basic" checked>
-                            <span class="guide-tag">basic</span><span class="guide-title">基础信息</span>
+                <div class="ai-block">
+                    <div class="ai-block-label">
+                        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="sendTropeToAi" checked style="accent-color: var(--primary-color);">
+                            <span class="ai-tag-badge">trope</span>
+                            附带已选全局灵感
                         </label>
-                        <div class="ai-guide-body">
-                            <textarea id="guide_basic">为角色设计完整基础档案：中英文名、合理的年龄生日、星座性别身高。设计2-3个身份标签、1-2个人设类型，以及外界对他/她的评价。</textarea>
-                        </div>
+                    </div>
+                    <textarea id="aiTrope" rows="2" readonly placeholder="尚未选择灵感词条，请在第一页点击词条添加"></textarea>
+                </div>
+
+                <div class="ai-block">
+                    <div class="ai-block-label" style="cursor: pointer; user-select: none; color: var(--primary-hover); background: var(--primary-light); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);" onclick="toggleAiModules('char')">
+                        <span id="aiCharModulesToggleArrow" style="display:inline-block; transition: transform 0.2s; transform: rotate(90deg);">▶</span> 📦 让 AI 帮我生成的详细模块
                     </div>
 
-                    <div class="ai-guide-module">
-                        <label class="ai-guide-header">
-                            <input type="checkbox" name="aiModule" value="background" checked>
-                            <span class="guide-tag">background</span><span class="guide-title">背景故事</span>
-                        </label>
-                        <div class="ai-guide-body">
-                            <textarea id="guide_background">分阶段为角色设计连贯且有戏剧张力的成长经历，注意前后因果呼应，塑造性格形成的逻辑链。</textarea>
-                        </div>
-                    </div>
+                    <div id="aiCharModulesContainer" style="margin-top: 14px; padding-left: 8px; border-left: 3px solid var(--primary-light);">
+                        <!-- 人设卡模块 -->
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="basic" checked><span class="guide-tag">basic</span><span class="guide-title">基础信息</span></label><div class="ai-guide-body"><textarea id="guide_basic">为角色设计完整基础档案：中英文名、合理的年龄生日、星座性别身高。设计2-3个身份标签、1-2个人设类型，以及外界对他/她的评价。</textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="background" checked><span class="guide-tag">background</span><span class="guide-title">背景故事</span></label><div class="ai-guide-body"><textarea id="guide_background">分阶段为角色设计连贯且有戏剧张力的成长经历，注意前后因果呼应，塑造性格形成的逻辑链。</textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="appearance" checked><span class="guide-tag">appearance</span><span class="guide-title">外貌穿着</span></label><div class="ai-guide-body"><textarea id="guide_appearance">细致描写发型发色、眼睛、皮肤、脸型体型特点，以及正装、休闲、日常、居家的穿着搭配。</textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="personality" checked><span class="guide-tag">personality</span><span class="guide-title">性格特质</span></label><div class="ai-guide-body"><textarea id="guide_personality">设计角色的核心性格（需有反差感）、恋爱中的性格表现、弱点/缺陷、喜恶以及人生目标。</textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="behavior" checked><span class="guide-tag">behavior</span><span class="guide-title">行为习惯</span></label><div class="ai-guide-body"><textarea id="guide_behavior">生活/工作习惯、不同情绪时的表现、关系边界差异、以及各种技能。行为细节要具体生动。</textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="speech" checked><span class="guide-tag">speech</span><span class="guide-title">说话风格</span></label><div class="ai-guide-body"><textarea id="guide_speech">语气和用词特点、整体风格说明、口音特点、以及网络聊天时的风格。</textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="extra"><span class="guide-tag">extra</span><span class="guide-title">额外补充</span></label><div class="ai-guide-body"><textarea id="guide_extra">口头禅、小动作、心理创伤、核心价值观、内心矛盾、秘密、重要人际关系等深层细节。</textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="nsfw"><span class="guide-tag" style="background: #e74c3c;">nsfw</span><span class="guide-title">🔞 NSFW 信息</span></label><div class="ai-guide-body"><textarea id="guide_nsfw">请补全角色的NSFW信息，保持成人向虚构创作语境：1) 性相关特征：性经验、性取向、性器特征，性爱角色/定位（2-4条）、性爱习惯（2-4条）；2) 性癖/Kinks：给出3-8条偏好关键词或短句；3) 雷区/禁止事项（Limits）：给出3-8条明确边界。描述保持可用于角色卡的结构化表达，避免空泛。</textarea></div></div>
 
-                    <div class="ai-guide-module">
-                        <label class="ai-guide-header">
-                            <input type="checkbox" name="aiModule" value="appearance" checked>
-                            <span class="guide-tag">appearance</span><span class="guide-title">外貌穿着</span>
-                        </label>
-                        <div class="ai-guide-body">
-                            <textarea id="guide_appearance">细致描写发型发色、眼睛、皮肤、脸型体型特点，以及正装、休闲、日常、居家的穿着搭配。</textarea>
+                        <div class="json-preview-toggle" id="jsonPreviewToggle" onclick="toggleJsonPreview()">
+                            <span class="arrow">▶</span> 📋 预期返回的 JSON 格式参考
                         </div>
+                        <div id="moduleJsonPreview" style="display:none;background:#f8f9fa;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;font-family:Consolas,monospace;font-size:0.8rem;line-height:1.6;white-space:pre-wrap;color:#2d3436; margin-bottom: 10px;"></div>
                     </div>
+                </div>
 
-                    <div class="ai-guide-module">
-                        <label class="ai-guide-header">
-                            <input type="checkbox" name="aiModule" value="personality" checked>
-                            <span class="guide-tag">personality</span><span class="guide-title">性格特质</span>
-                        </label>
-                        <div class="ai-guide-body">
-                            <textarea id="guide_personality">设计角色的核心性格（需有反差感）、恋爱中的性格表现、弱点/缺陷、喜恶以及人生目标。</textarea>
-                        </div>
-                    </div>
+                <div class="ai-generate-area">
+                    <button type="button" class="btn-ai-generate" id="btnGenerateChar" onclick="generateWithAI()">🤖 一键生成全部主角人设</button>
+                    <span class="ai-status-text" id="aiStatusTextChar"></span>
+                </div>
 
-                    <div class="ai-guide-module">
-                        <label class="ai-guide-header">
-                            <input type="checkbox" name="aiModule" value="behavior" checked>
-                            <span class="guide-tag">behavior</span><span class="guide-title">行为习惯</span>
-                        </label>
-                        <div class="ai-guide-body">
-                            <textarea id="guide_behavior">生活/工作习惯、不同情绪时的表现、关系边界差异、以及各种技能。行为细节要具体生动。</textarea>
-                        </div>
+                <div class="ai-raw-reply-section" id="aiRawReplySectionChar" style="display:none; margin-top: 20px;">
+                    <div class="ai-raw-reply-header">
+                        <h4>人设生成内容</h4>
+                        <button type="button" class="btn-copy-small" onclick="copyRawReply('Char')">📋 复制全部</button>
                     </div>
-
-                    <div class="ai-guide-module">
-                        <label class="ai-guide-header">
-                            <input type="checkbox" name="aiModule" value="speech" checked>
-                            <span class="guide-tag">speech</span><span class="guide-title">说话风格</span>
-                        </label>
-                        <div class="ai-guide-body">
-                            <textarea id="guide_speech">语气和用词特点、整体风格说明、口音特点、以及网络聊天时的风格。</textarea>
-                        </div>
-                    </div>
-
-                    <div class="ai-guide-module">
-                        <label class="ai-guide-header">
-                            <input type="checkbox" name="aiModule" value="extra">
-                            <span class="guide-tag">extra</span><span class="guide-title">额外补充</span>
-                        </label>
-                        <div class="ai-guide-body">
-                            <textarea id="guide_extra">口头禅、小动作、心理创伤、核心价值观、内心矛盾、秘密、重要人际关系等深层细节。</textarea>
-                        </div>
-                    </div>
-
-                    <div class="ai-guide-module">
-                        <label class="ai-guide-header">
-                            <input type="checkbox" name="aiModule" value="nsfw">
-                            <span class="guide-tag" style="background: #e74c3c;">nsfw</span><span class="guide-title">🔞 NSFW 信息</span>
-                        </label>
-                        <div class="ai-guide-body">
-                            <textarea id="guide_nsfw">请补全角色的NSFW信息，保持成人向虚构创作语境：1) 性相关特征：性经验、性取向、性爱角色/定位（2-4条）、性爱习惯（2-4条）；2) 性癖/Kinks：给出3-8条偏好关键词或短句；3) 雷区/禁止事项（Limits）：给出3-8条明确边界。描述保持可用于角色卡的结构化表达，避免空泛。</textarea>
-                        </div>
-                    </div>
-
-                    <div class="json-preview-toggle" id="jsonPreviewToggle" onclick="toggleJsonPreview()">
-                        <span class="arrow">▶</span> 📋 预期返回的 JSON 格式参考
-                    </div>
-                    <div id="moduleJsonPreview" style="display:none;background:#f8f9fa;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;font-family:Consolas,monospace;font-size:0.8rem;line-height:1.6;white-space:pre-wrap;color:#2d3436; margin-bottom: 10px;"></div>
+                    <div class="ai-raw-reply-content" id="aiRawReplyContentChar">等待生成…</div>
                 </div>
             </div>
 
-            <div class="ai-generate-area">
-                <button type="button" class="btn-ai-generate" id="btnGenerate" onclick="generateWithAI()">🤖 一键生成全部主角人设</button>
-                <span class="ai-status-text" id="aiStatusTextGen"></span>
-            </div>
-        </div>
-
-        <div class="card-section" id="aiRawReplySection" style="display:none">
-            <div class="section-header">
-                <div class="section-icon">📝</div>
-                <h2>AI 人设产出结果</h2>
-            </div>
-            <div class="ai-raw-reply-section" id="aiRawReplyWrapper">
-                <div class="ai-raw-reply-header">
-                    <h4>生成内容 (JSON)</h4>
-                    <button type="button" class="btn-copy-small" onclick="copyRawReply()">📋 复制全部</button>
-                </div>
-                <div class="ai-raw-reply-content" id="aiRawReplyContent">等待生成…</div>
-            </div>
-        </div>
-
-        <div class="card-section">
-            <div class="section-header">
-                <div class="section-icon">📖</div>
-                <h2>构建故事开头提示词</h2>
-            </div>
-
-            <div class="ai-block">
-                <div class="ai-block-label"><span class="ai-tag-badge">persona</span> 作者设定（系统提示）</div>
-                <textarea id="aiStoryPersona" rows="3">你是一名专业的轻小说、同人小说作者。擅长根据给定的世界观和主角人设，撰写极具吸引力、充满画面感的故事开头。你的文字优美，节奏紧凑，能够迅速抓住读者的眼球。</textarea>
-            </div>
-
-            <div class="ai-block">
-                <div class="ai-block-label">
-                    <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" id="sendTropeToStory" checked style="accent-color: var(--primary-color);">
-                        <span class="ai-tag-badge">trope</span>
-                        附带全局已选灵感作为切入点
-                    </label>
-                </div>
-            </div>
-
-            <!-- ===== 专属故事关键词模块 ===== -->
-            <div class="ai-block" style="background: #fbfdff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px;">
-                <div class="ai-block-label" style="margin-bottom: 6px;"><span class="ai-tag-badge" style="background:#8e44ad;">keywords</span> 故事关键词池 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub);">(点击选中/取消，AI将参考选中的词汇构建开头情节)</span></div>
-
-                <div class="inspo-input-row" style="margin-top: 10px;">
-                    <input type="text" id="storyKeywordInput" placeholder="输入你想在开头出现的元素 (例如: 雨夜、失忆、酒吧等)，按 Enter 添加…" onkeydown="inspoInputKeydown(event, 'storyKeyword')">
-                    <button type="button" class="btn-inspo-add" style="background: #8e44ad;" onclick="addInspoWord('storyKeyword')">➕ 添加</button>
+            <!-- ============================================== -->
+            <!-- 模式 2：生成世界书 -->
+            <!-- ============================================== -->
+            <div id="ai-mode-world" class="ai-mode-content">
+                <div class="ai-block">
+                    <div class="ai-block-label"><span class="ai-tag-badge" style="background:#8e44ad;">world_builder</span> 身份定义 / 破甲（系统提示）</div>
+                    <textarea id="aiWorldPersona" rows="3">你是一名专业的小说世界观架构师（World Builder）。擅长根据给定的主角人设和灵感元素，构建出一套合乎逻辑、细节丰满且富有吸引力的《世界书》。你的文字要有条理，方便作者日后作为写作大纲参考。</textarea>
                 </div>
 
-                <div class="inspo-tags" id="storyKeywordTags" style="min-height: 60px;">
-                    <span class="inspo-tag-empty">关键词库为空，添加一些场景或事件碎片吧～</span>
+                <div class="ai-block">
+                    <div class="ai-block-label">
+                        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="sendTropeToWorld" checked style="accent-color: var(--primary-color);">
+                            <span class="ai-tag-badge">trope</span>
+                            附带已选全局灵感
+                        </label>
+                    </div>
                 </div>
 
-                <div class="inspo-actions">
-                    <button type="button" class="btn-inspo-import" onclick="loadDefaultInspos('storyKeyword')">载入默认网文词库</button>
-                    <button type="button" class="btn-inspo-import" onclick="openImportModal('storyKeyword')">📋 批量导入</button>
-                    <button type="button" class="btn-inspo-import" onclick="exportInspoPool('storyKeyword')">📤 导出词库</button>
-                    <button type="button" class="btn-inspo-clear" onclick="clearInspoPool('storyKeyword')">清空词库</button>
+                <div class="ai-block">
+                    <div class="ai-block-label" style="cursor: pointer; user-select: none; color: #8e44ad; background: #f4ecf7; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid #d7bde2;" onclick="toggleAiModules('world')">
+                        <span id="aiWorldModulesToggleArrow" style="display:inline-block; transition: transform 0.2s; transform: rotate(90deg);">▶</span> 📦 需扩写的世界书模块
+                    </div>
+
+                    <div id="aiWorldModulesContainer" style="margin-top: 14px; padding-left: 8px; border-left: 3px solid #f4ecf7;">
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="worldModule" value="era_background" checked><span class="guide-tag" style="background:#9b59b6;">era</span><span class="guide-title">时代背景</span></label><div class="ai-guide-body"><textarea id="wb_era_background" placeholder="扩写与该人设及主要剧情相关的时间线、空间环境、经济政治、社会风气、习俗文化等整体背景。"></textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="worldModule" value="special_settings" checked><span class="guide-tag" style="background:#9b59b6;">settings</span><span class="guide-title">特殊设定</span></label><div class="ai-guide-body"><textarea id="wb_special_settings" placeholder="说明是否存在花吐症、ABO、哨兵向导、机设、魔法体系、游戏规则等特殊设定；如有，请尽量说明清楚规则与限制。若无特殊设定可根据背景补充职场/生活规则。"></textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="worldModule" value="npcs" checked><span class="guide-tag" style="background:#9b59b6;">npcs</span><span class="guide-title">NPCs 配角群</span></label><div class="ai-guide-body"><textarea id="wb_npcs" placeholder="设计在这张卡里可能会出现的非主角的重要配角，以及他们与主角之间的关系、在剧情中的作用（至少设计3-4个有趣的角色）。"></textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="worldModule" value="persona_correction" checked><span class="guide-tag" style="background:#9b59b6;">correction</span><span class="guide-title">人设纠偏/防崩坏</span></label><div class="ai-guide-body"><textarea id="wb_persona_correction" placeholder="在实际写文过程中容易崩坏的点，提出「不要这样写」「更接近本意的写法」等避雷或纠偏说明。"></textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="worldModule" value="extra" checked><span class="guide-tag" style="background:#9b59b6;">extra</span><span class="guide-title">额外补充</span></label><div class="ai-guide-body"><textarea id="wb_extra" placeholder="任何上面没提到、但和世界观/长线剧情相关的重要信息、主线悬念、暗线设定都可以写在这里。"></textarea></div></div>
+
+                        <p style="font-size: 0.85rem; color: var(--text-sub); margin-top: 10px;">提示：如果不输入具体扩写要求，该条目将会被视为空白并跳过，AI 不会生成该项。生成的《世界书》将自动填入顶部【小世界】的“详细世界书大纲”输入框中保存。</p>
+                    </div>
+                </div>
+
+                <div class="ai-generate-area">
+                    <button type="button" class="btn-ai-generate btn-ai-world" id="btnGenerateWorld" onclick="generateWorldbookWithAI()">🌍 扩写并生成世界书</button>
+                    <span class="ai-status-text" id="aiStatusTextWorld"></span>
+                </div>
+
+                <div class="ai-raw-reply-section" id="aiRawReplySectionWorld" style="display:none; margin-top: 20px;">
+                    <div class="ai-raw-reply-header">
+                        <h4>世界书生成内容 (YAML)</h4>
+                        <button type="button" class="btn-copy-small" onclick="copyRawReply('World')">📋 复制全部</button>
+                    </div>
+                    <div class="ai-raw-reply-content" id="aiRawReplyContentWorld">等待生成…</div>
                 </div>
             </div>
 
-            <div class="ai-block">
-                <div class="ai-block-label"><span class="ai-tag-badge">request</span> 具体情节要求</div>
-                <textarea id="aiStoryRequest" rows="5">请根据小世界设定和主角信息，写一个大约 200 字的故事开头（第一章）。
+            <!-- ============================================== -->
+            <!-- 模式 3：生成故事开头 -->
+            <!-- ============================================== -->
+            <div id="ai-mode-story" class="ai-mode-content">
+                <div class="ai-block">
+                    <div class="ai-block-label"><span class="ai-tag-badge" style="background:#27ae60;">author</span> 作者设定（系统提示）</div>
+                    <textarea id="aiStoryPersona" rows="3">你是一名专业的轻小说、同人小说作者。擅长根据给定的世界书和主角人设，撰写极具吸引力、充满画面感的故事开头。你的文字优美，节奏紧凑，能够迅速抓住读者的眼球。</textarea>
+                </div>
+
+                <div class="ai-block">
+                    <div class="ai-block-label">
+                        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="sendTropeToStory" checked style="accent-color: var(--primary-color);">
+                            <span class="ai-tag-badge">trope</span>
+                            附带全局已选灵感作为切入点
+                        </label>
+                    </div>
+                </div>
+
+                <div class="ai-block" style="background: #fbfdff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px;">
+                    <div class="ai-block-label" style="margin-bottom: 6px;"><span class="ai-tag-badge" style="background:#27ae60;">keywords</span> 故事关键词池 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub);">(点击选中/取消，AI将参考选中的词汇构建开头情节)</span></div>
+                    <div class="inspo-input-row" style="margin-top: 10px;">
+                        <input type="text" id="storyKeywordInput" placeholder="输入你想在开头出现的元素 (例如: 雨夜、失忆等)，按 Enter 添加…" onkeydown="inspoInputKeydown(event, 'storyKeyword')">
+                        <button type="button" class="btn-inspo-add" style="background: #27ae60;" onclick="addInspoWord('storyKeyword')">➕ 添加</button>
+                    </div>
+                    <div class="inspo-tags" id="storyKeywordTags" style="min-height: 60px;"></div>
+                    <div class="inspo-actions">
+                        <button type="button" class="btn-inspo-import" onclick="loadDefaultInspos('storyKeyword')">载入默认网文词库</button>
+                        <button type="button" class="btn-inspo-import" onclick="openImportModal('storyKeyword')">📋 批量导入</button>
+                        <button type="button" class="btn-inspo-import" onclick="exportInspoPool('storyKeyword')">📤 导出词库</button>
+                        <button type="button" class="btn-inspo-clear" onclick="clearInspoPool('storyKeyword')">清空词库</button>
+                    </div>
+                </div>
+
+                <div class="ai-block">
+                    <div class="ai-block-label"><span class="ai-tag-badge" style="background:#27ae60;">request</span> 具体情节要求</div>
+                    <textarea id="aiStoryRequest" rows="5">请根据小世界设定和主角信息，写一个大约 200 字的故事开头（第一章）。
 要求：
 1. 直接切入核心冲突或展现世界观的独特魅力。
 2. 充分展现主角们的性格特点与张力，安排他们合理的出场方式。
 3. 文字要有画面感和氛围感，不要平铺直叙地介绍背景。
 4. 故事可以在主角相遇初始或相遇后，或者相恋时，结婚后等不同的时间线
-5. 故事走向可以朝着nsfw方向发展。</textarea>
-            </div>
-
-            <div class="ai-generate-area">
-                <button type="button" class="btn-ai-generate" id="btnGenerateStory" onclick="generateStoryWithAI()" style="background: linear-gradient(135deg, #27ae60, #2ecc71); box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);">📜 生成故事正文</button>
-                <span class="ai-status-text" id="aiStoryStatusText"></span>
-            </div>
-        </div>
-
-        <div class="card-section" id="aiStoryReplySection" style="display:none">
-            <div class="section-header">
-                <div class="section-icon">🎬</div>
-                <h2>故事正文产出结果</h2>
-            </div>
-            <div class="ai-raw-reply-section">
-                <div class="ai-raw-reply-header">
-                    <h4>正文内容</h4>
-                    <button type="button" class="btn-copy-small" onclick="copyStoryReply()">📋 复制正文</button>
+5. 细节要生动。</textarea>
                 </div>
-                <div class="ai-raw-reply-content" id="aiStoryReplyContent" style="font-family: inherit; font-size: 0.95rem;">等待生成…</div>
-            </div>
-        </div>
 
+                <div class="ai-generate-area">
+                    <button type="button" class="btn-ai-generate btn-ai-story" id="btnGenerateStory" onclick="generateStoryWithAI()">📜 撰写故事正文</button>
+                    <span class="ai-status-text" id="aiStoryStatusText"></span>
+                </div>
+
+                <div class="ai-raw-reply-section" id="aiRawReplySectionStory" style="display:none; margin-top: 20px;">
+                    <div class="ai-raw-reply-header">
+                        <h4>正文内容</h4>
+                        <button type="button" class="btn-copy-small" onclick="copyRawReply('Story')">📋 复制正文</button>
+                    </div>
+                    <div class="ai-raw-reply-content" id="aiRawReplyContentStory" style="font-family: inherit; font-size: 0.95rem;">等待生成…</div>
+                </div>
+            </div>
+
+        </div>
     </div>
 </div>
 
@@ -705,20 +408,7 @@
     function escapeHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     // ============================================================
-    //  用户名保存逻辑
-    // ============================================================
-    const LS_USER_NAME = 'ss_user_name_v1';
-    function saveUserName() {
-        const name = document.getElementById('userNameInput').value.trim();
-        localStorage.setItem(LS_USER_NAME, name);
-    }
-    function loadUserName() {
-        const name = localStorage.getItem(LS_USER_NAME) || '';
-        document.getElementById('userNameInput').value = name;
-    }
-
-    // ============================================================
-    //  Tabs 切换
+    //  Tabs & Sub-Tabs 切换
     // ============================================================
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -729,10 +419,22 @@
         });
     });
 
+    document.querySelectorAll('.ai-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ai-mode-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.ai-mode-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('ai-mode-' + btn.dataset.mode).classList.add('active');
+        });
+    });
+
     // 折叠 AI 生成模块功能
-    function toggleAiModules() {
-        const container = document.getElementById('aiModulesContainer');
-        const arrow = document.getElementById('aiModulesToggleArrow');
+    function toggleAiModules(mode) {
+        let containerId = mode === 'world' ? 'aiWorldModulesContainer' : 'aiCharModulesContainer';
+        let arrowId = mode === 'world' ? 'aiWorldModulesToggleArrow' : 'aiCharModulesToggleArrow';
+
+        const container = document.getElementById(containerId);
+        const arrow = document.getElementById(arrowId);
         if(container.style.display === 'none') {
             container.style.display = 'block';
             arrow.style.transform = 'rotate(90deg)';
@@ -758,7 +460,7 @@
         let currentId = getCurWorldId();
         if (Object.keys(worlds).length === 0) {
             const id = generateId();
-            worlds[id] = { name: '默认世界', setting: '', protagonists: [] };
+            worlds[id] = { name: '默认世界', worldbook: '', protagonists: [], selectedInspos: [], selectedStoryKeywords: [] };
             saveWorlds(worlds); currentId = id; setCurWorldId(id);
         }
         if (!worlds[currentId]) { currentId = Object.keys(worlds)[0]; setCurWorldId(currentId); }
@@ -784,7 +486,7 @@
     function addWorld() {
         const name = prompt('新世界名称：', '新世界'); if (!name) return;
         const worlds = getWorlds(); const id = generateId();
-        worlds[id] = { name: name.trim(), setting: '', protagonists: [] };
+        worlds[id] = { name: name.trim(), worldbook: '', protagonists: [], selectedInspos: [], selectedStoryKeywords: [] };
         saveWorlds(worlds); setCurWorldId(id);
         renderWorldSelect(worlds, id); loadWorldData(id);
         showToast('✨ 已新建世界');
@@ -812,8 +514,14 @@
 
     function loadWorldData(id) {
         const worlds = getWorlds(); const w = worlds[id]; if(!w) return;
-        document.getElementById('worldSetting').value = w.setting || '';
+        document.getElementById('worldWorldbook').value = w.worldbook || '';
         renderProtagonists(w.protagonists || []);
+
+        // 重新渲染当前小世界的灵感词条状态
+        renderInspoTags('persona');
+        renderInspoTags('trope');
+        renderInspoTags('storyKeyword');
+        updateCurrentInspoDisplay();
     }
 
     function renderProtagonists(list) {
@@ -828,8 +536,6 @@
                 <select onchange="updateProta('${p.id}', 'role', this.value)">
                     <option value="攻" ${p.role === '攻' ? 'selected' : ''}>主角攻</option>
                     <option value="受" ${p.role === '受' ? 'selected' : ''}>主角受</option>
-                    <option value="互攻" ${p.role === '互攻' ? 'selected' : ''}>互攻</option>
-                    <option value="其他" ${p.role === '其他' ? 'selected' : ''}>其他/无定</option>
                 </select>
             </div>
             <textarea placeholder="简要人设描述 (外貌、性格、身份等)..." oninput="updateProta('${p.id}', 'brief', this.value)">${escapeHtml(p.brief)}</textarea>
@@ -864,7 +570,7 @@
     function autoSaveWorld() {
         const id = getCurWorldId(); const worlds = getWorlds();
         if (worlds[id]) {
-            worlds[id].setting = document.getElementById('worldSetting').value;
+            worlds[id].worldbook = document.getElementById('worldWorldbook').value;
             saveWorlds(worlds);
         }
     }
@@ -875,36 +581,12 @@
     const LS_INSPO_PERSONA = 'ss_inspo_persona_v3';
     const LS_INSPO_TROPE = 'ss_inspo_trope_v3';
     const LS_INSPO_STORY_KEYWORD = 'ss_inspo_story_keyword_v1';
-    const LS_INSPO_LAST = 'ss_inspo_last_v2';
-    const LS_STORY_KEYWORD_LAST = 'ss_story_keyword_last_v1';
     const LS_SURNAMES = 'ss_surnames_v2';
     const LS_CHARNAMES = 'ss_charnames_v2';
 
-    // 默认灵感词库 - 人设
-    const DEFAULT_PERSONA = [
-        "高冷禁欲攻","温柔腹黑攻","病娇偏执攻","年下狼犬攻","年下忠犬攻","爹系男友攻",
-        "雅痞流氓攻","清冷仙尊攻","阴鸷权臣攻","傲娇纯情攻","疯批美人攻","深情硬汉攻",
-        "毒舌金主攻","沉稳老干部攻","阳光健气受","咸鱼摆烂受","傲娇女王受","温润如玉受",
-        "病弱受","白切黑诱受","小太阳受","武力值爆表受","清贫学霸受","迟钝天然呆受",
-        "社恐宅男受","毒舌吐槽受","明艳张扬受"
-    ];
-
-    // 默认灵感词库 - 类型
-    const DEFAULT_TROPE = [
-        "情敌变情人","死对头变真爱","宿敌相爱相杀","先婚后爱","契约恋爱","破镜重圆",
-        "追妻火葬场","单向暗恋转双向","青梅竹马抵不过天降","替身文学","白月光竟是我自己",
-        "救赎与被救赎","相依为命","美攻壮受","强强","年下养成","体型差","肤色差",
-        "高岭之花下神坛","双向奔赴","年上","年下","一见钟情","日久生情","暗恋成真",
-        "双向暗恋"
-    ];
-
-    // 默认灵感词库 - 故事关键词
-    const DEFAULT_STORY_KEYWORD = [
-        "雨夜","初雪","意外相遇","久别重逢","酒吧","街角","失忆","醉酒","擦肩而过",
-        "危机","暗巷","宴会","契约","误会","争吵","救美","被困","电梯故障","病房",
-        "相亲","车祸","晚宴逃跑","错认","停电","真心话大冒险"
-    ];
-
+    const DEFAULT_PERSONA = [ "高冷禁欲攻","温柔腹黑攻","病娇偏执攻","年下狼犬攻","年下忠犬攻","爹系男友攻", "雅痞流氓攻","清冷仙尊攻","阴鸷权臣攻","傲娇纯情攻","疯批美人攻","深情硬汉攻", "毒舌金主攻","沉稳老干部攻","阳光健气受","咸鱼摆烂受","傲娇女王受","温润如玉受", "病弱受","白切黑诱受","小太阳受","武力值爆表受","清贫学霸受","迟钝天然呆受", "社恐宅男受","毒舌吐槽受","明艳张扬受" ];
+    const DEFAULT_TROPE = [ "情敌变情人","死对头变真爱","宿敌相爱相杀","先婚后爱","契约恋爱","破镜重圆", "追妻火葬场","单向暗恋转双向","青梅竹马抵不过天降","替身文学","白月光竟是我自己", "救赎与被救赎","相依为命","美攻壮受","强强","年下养成","体型差","肤色差", "高岭之花下神坛","双向奔赴","年上","年下","一见钟情","日久生情","暗恋成真", "双向暗恋" ];
+    const DEFAULT_STORY_KEYWORD = [ "雨夜","初雪","意外相遇","久别重逢","酒吧","街角","失忆","醉酒","擦肩而过", "危机","暗巷","宴会","契约","误会","争吵","救美","被困","电梯故障","病房", "相亲","车祸","晚宴逃跑","错认","停电","真心话大冒险" ];
     const DEFAULT_SURNAMES  = ['顾','林','陆','沈','裴','贺','谢','江','傅','霍','厉','封','盛','季','宗','闻','薄','容','苏','晏','楚','萧','燕','祁','景','宁','桑','戚','越','岑','谈','郁','申','隋','诸','湛','蔺','商','秦','牧','应','白','时','向','黎','司','莫','言','唐','周','魏','韩','卓','凌','柯','宣','简','舒','喻','墨','原','池','项','单','席','路','左','余','安','乔','夏','秋','温','步','狄','卫','任','赫','滕','万','乐','年','展','曲','练','叶','迟','计','解','巫','伏','段','连','官','楼','云','宫','元','仲','严','常','武','蓝','金','冷','仇','殷','屠','房','庞','龚','屈','樊','芮','邢','倪','吉','谷','闵','卞','寇','郜','骆','曾','庄','蒲'];
     const DEFAULT_CHARNAMES = ['凛','寒','霄','霆','绝','骁','肃','彻','锋','渊','冥','沉','屹','舟','渡','重','衍','淮','深','予','衡','厉','封','寂','狂','傲','夜','苍','诀','冥','肆','镇','北','枭','乾','璟','瑜','辞','砚','墨','谦','尘','宁','意','疏','清','浅','筠','逸','怀','远','锦','昭','钰','如','予','时','珩','兰','芷','容','雅','颂','书','其','微','君','言','舒','白','朗','阳','灿','晖','燃','乐','朝','星','遇','野','川','原','禾','跃','凡','卓','鸣','晨','曦','旭','瑞','嘉','骏','帆','凯','航','昂','飞','瀚','景','诚','毅','博','拓','述','望','策','呈','寻','既','斯','逾','庭','弈','叙','既','临','予','慕','呈','裴','迟','越','陆','沈','顾','席','季','商','封','傅','闻','景','薄','晏','楚','萧','秦','谢'];
 
@@ -920,16 +602,31 @@
         if (category === 'storyKeyword') localStorage.setItem(LS_INSPO_STORY_KEYWORD, JSON.stringify(p));
     }
 
-    function getLastInspo() { try { return JSON.parse(localStorage.getItem(LS_INSPO_LAST)) || []; } catch(e) { return []; } }
-    function saveLastInspo(p) { localStorage.setItem(LS_INSPO_LAST, JSON.stringify(p || [])); }
+    function getLastInspo() {
+        const wId = getCurWorldId(); if(!wId) return [];
+        return getWorlds()[wId]?.selectedInspos || [];
+    }
+    function saveLastInspo(p) {
+        const wId = getCurWorldId(); if(!wId) return;
+        const worlds = getWorlds();
+        if(worlds[wId]) { worlds[wId].selectedInspos = p || []; saveWorlds(worlds); }
+    }
 
-    function getSelectedStoryKeywords() { try { return JSON.parse(localStorage.getItem(LS_STORY_KEYWORD_LAST)) || []; } catch(e) { return []; } }
-    function saveSelectedStoryKeywords(p) { localStorage.setItem(LS_STORY_KEYWORD_LAST, JSON.stringify(p || [])); }
+    function getSelectedStoryKeywords() {
+        const wId = getCurWorldId(); if(!wId) return [];
+        return getWorlds()[wId]?.selectedStoryKeywords || [];
+    }
+    function saveSelectedStoryKeywords(p) {
+        const wId = getCurWorldId(); if(!wId) return;
+        const worlds = getWorlds();
+        if(worlds[wId]) { worlds[wId].selectedStoryKeywords = p || []; saveWorlds(worlds); }
+    }
 
     function renderInspoTags(category) {
         const pool = getInspoPool(category);
         const current = category === 'storyKeyword' ? getSelectedStoryKeywords() : getLastInspo();
         const container = document.getElementById(category + 'Tags');
+        if(!container) return;
         container.innerHTML = '';
         if (pool.length === 0) {
             container.innerHTML = '<span class="inspo-tag-empty">词库为空，添加一些碎片词汇吧～</span>';
@@ -939,8 +636,8 @@
             const tag = document.createElement('span');
             tag.className = 'inspo-tag' + (current.includes(word) ? ' selected' : '');
             if(category === 'storyKeyword' && current.includes(word)) {
-                tag.style.background = '#8e44ad';
-                tag.style.boxShadow = '0 2px 8px rgba(142, 68, 173, 0.3)';
+                tag.style.background = '#27ae60';
+                tag.style.boxShadow = '0 2px 8px rgba(39, 174, 96, 0.3)';
             }
             tag.onclick = () => {
                 if (category === 'storyKeyword') toggleStoryKeyword(word);
@@ -967,13 +664,10 @@
         if (category === 'persona') defaults = DEFAULT_PERSONA;
         else if (category === 'trope') defaults = DEFAULT_TROPE;
         else if (category === 'storyKeyword') defaults = DEFAULT_STORY_KEYWORD;
-
         const newPool = [...new Set([...pool, ...defaults])];
         saveInspoPool(category, newPool);
         renderInspoTags(category);
-
-        const name = category === 'persona' ? '人设' : (category === 'trope' ? '类型' : '故事关键词');
-        showToast(`✅ 已载入默认${name}词库`);
+        showToast(`✅ 已载入默认词库`);
     }
 
     function removeInspoWord(category, idx, e) {
@@ -995,71 +689,39 @@
         }
     }
 
-    // 切换选中状态（全局人设灵感）
     function toggleInspoWord(word) {
         const curr = getLastInspo(); const idx = curr.indexOf(word);
         if(idx >= 0) curr.splice(idx,1); else curr.push(word);
-        saveLastInspo(curr);
-        renderInspoTags('persona');
-        renderInspoTags('trope');
-        updateCurrentInspoDisplay();
+        saveLastInspo(curr); renderInspoTags('persona'); renderInspoTags('trope'); updateCurrentInspoDisplay();
     }
-
-    // 切换选中状态（故事特定关键词）
     function toggleStoryKeyword(word) {
         const curr = getSelectedStoryKeywords(); const idx = curr.indexOf(word);
         if(idx >= 0) curr.splice(idx,1); else curr.push(word);
-        saveSelectedStoryKeywords(curr);
-        renderInspoTags('storyKeyword');
+        saveSelectedStoryKeywords(curr); renderInspoTags('storyKeyword');
     }
 
     function clearInspoPool(category) {
-        const name = category === 'persona' ? '人设' : (category === 'trope' ? '类型' : '故事关键词');
-        if(confirm(`清空${name}词库？(不会清空已选的灵感)`)){
-            saveInspoPool(category, []);
-            renderInspoTags(category);
-        }
+        if(confirm(`清空词库？(不会清空已选的灵感)`)){ saveInspoPool(category, []); renderInspoTags(category); }
     }
-
     function exportInspoPool(category) {
         const pool = getInspoPool(category);
-        if(pool.length === 0) { showToast('词库为空，无法导出'); return; }
-        const text = pool.join('\n');
-        const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-
-        const name = category === 'persona' ? '人设词库' : (category === 'trope' ? '类型词库' : '故事关键词');
-        a.download = name + '.txt';
-
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('✅ 已导出');
+        if(pool.length === 0) { showToast('词库为空'); return; }
+        const blob = new Blob([pool.join('\n')], {type: 'text/plain;charset=utf-8'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = category + '.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
-
-    // 更新顶部展示区
     function updateCurrentInspoDisplay() {
         const words = getLastInspo();
         const container = document.getElementById('currentInspoTags'); container.innerHTML = '';
-        if(!words.length) {
-            container.innerHTML = '<span class="current-inspo-empty">尚未选择灵感词条，请在下方词库点击添加 👇</span>';
-        } else {
+        if(!words.length) { container.innerHTML = '<span class="current-inspo-empty">尚未选择灵感词条，请在下方词库点击添加 👇</span>'; }
+        else {
             words.forEach(w => {
-                const t = document.createElement('span');
-                t.className = 'current-inspo-tag';
-                t.title = "点击移除";
+                const t = document.createElement('span'); t.className = 'current-inspo-tag'; t.title = "点击移除";
                 t.innerHTML = `${escapeHtml(w)} <span style="margin-left:4px; opacity:0.6; font-size:1.1rem;">×</span>`;
-                t.onclick = () => { toggleInspoWord(w); showToast(`已移除: ${w}`); };
-                container.appendChild(t);
+                t.onclick = () => { toggleInspoWord(w); }; container.appendChild(t);
             });
         }
-
-        // 同步到 AI 提示词框
-        const tropeInput = document.getElementById('aiTrope');
-        if (tropeInput) tropeInput.value = words.join(' / ');
+        const tropeInput = document.getElementById('aiTrope'); if (tropeInput) tropeInput.value = words.join(' / ');
     }
 
     // 起名器
@@ -1083,7 +745,6 @@
     function clearNamerPool(type) { if(confirm('确定清空？')){ saveNamerPool(type,[]); renderNamerTags(type); } }
     function loadDefaultSurnames() { const p = [...new Set([...getNamerPool('surname'), ...DEFAULT_SURNAMES])]; saveNamerPool('surname', p); renderNamerTags('surname'); }
     function loadDefaultCharnames() { const p = [...new Set([...getNamerPool('charname'), ...DEFAULT_CHARNAMES])]; saveNamerPool('charname', p); renderNamerTags('charname'); }
-
     function rollNames() {
         const surs = getNamerPool('surname'), chars = getNamerPool('charname');
         if(!surs.length || !chars.length){ showToast('姓氏或字池为空'); return; }
@@ -1094,50 +755,36 @@
             const s = surs[Math.floor(Math.random()*surs.length)];
             let c = ''; for(let j=0; j<len; j++) c += chars[Math.floor(Math.random()*chars.length)];
             const fullName = s + c;
-            const t = document.createElement('span'); t.className = 'namer-rolled-name';
-            t.textContent = fullName; t.title = '点击复制'; t.style.animationDelay = (i*0.04)+'s';
-            t.onclick = () => { navigator.clipboard.writeText(fullName).then(()=>showToast('📋 已复制：'+fullName)); };
+            const t = document.createElement('span'); t.className = 'namer-rolled-name'; t.textContent = fullName;
+            t.style.animationDelay = (i*0.04)+'s'; t.onclick = () => { navigator.clipboard.writeText(fullName).then(()=>showToast('📋 已复制：'+fullName)); };
             res.appendChild(t);
         }
     }
 
-    // 批量导入逻辑
-    let importTypeTarget = 'persona'; // persona | trope | storyKeyword | surname | charname
+    // 导入
+    let importTypeTarget = 'persona';
     function openImportModal(type = 'persona') {
         importTypeTarget = type;
-        let title = '📋 批量导入';
-        if(type === 'persona') title = '📋 批量导入人设';
-        else if(type === 'trope') title = '📋 批量导入类型';
-        else if(type === 'storyKeyword') title = '📋 批量导入关键词';
-        else if(type === 'surname') title = '📋 批量导入姓氏';
-        else if(type === 'charname') title = '📋 批量导入名字字';
-
-        document.getElementById('importModalTitle').textContent = title;
+        document.getElementById('importModalTitle').textContent = '📋 批量导入';
         document.getElementById('importTextarea').value = '';
         document.getElementById('importModal').classList.add('active');
     }
     function closeImportModal() { document.getElementById('importModal').classList.remove('active'); }
     function confirmImport() {
-        const raw = document.getElementById('importTextarea').value;
-        const words = raw.split(/[\n,，\s]+/).map(w=>w.trim()).filter(w=>w);
+        const words = document.getElementById('importTextarea').value.split(/[\n,，\s]+/).map(w=>w.trim()).filter(w=>w);
         if(!words.length){ closeImportModal(); return; }
-
         if(importTypeTarget === 'persona' || importTypeTarget === 'trope' || importTypeTarget === 'storyKeyword') {
-            const pool = getInspoPool(importTypeTarget);
-            words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
-            saveInspoPool(importTypeTarget, pool);
-            renderInspoTags(importTypeTarget);
+            const pool = getInspoPool(importTypeTarget); words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
+            saveInspoPool(importTypeTarget, pool); renderInspoTags(importTypeTarget);
         } else {
-            const pool = getNamerPool(importTypeTarget);
-            words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
-            saveNamerPool(importTypeTarget, pool);
-            renderNamerTags(importTypeTarget);
+            const pool = getNamerPool(importTypeTarget); words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
+            saveNamerPool(importTypeTarget, pool); renderNamerTags(importTypeTarget);
         }
         closeImportModal(); showToast('✅ 导入成功');
     }
 
     // ============================================================
-    //  AI 配置与生成模块
+    //  AI 配置与基础生成方法
     // ============================================================
     const LS_AI_PROVIDERS = 'ss_ai_providers_v2';
     const LS_AI_CURRENT_P = 'ss_ai_cur_provider_v2';
@@ -1218,7 +865,73 @@
         });
     }
 
-    // JSON Schema 生成规则
+    // 核心调用逻辑
+    async function executeAiGeneration(systemMsg, userMsg, replyElId, btnId, statusId) {
+        const baseUrl = document.getElementById('aiBaseUrl').value.trim().replace(/\/+$/, '');
+        const apiKey = document.getElementById('aiApiKey').value.trim();
+        const useStream = document.getElementById('enableStream').checked;
+
+        if(!baseUrl){ showToast('请填写 API 地址'); return false; }
+        if(!selectedModel){ showToast('请选择模型'); return false; }
+
+        const btn = document.getElementById(btnId); btn.disabled = true;
+        const replyEl = document.getElementById(replyElId);
+        replyEl.textContent = '⏳ 生成中，请耐心稍候…';
+        document.getElementById(statusId).textContent = '⏳ 正在请求 API...';
+
+        try {
+            currentAbortController = new AbortController();
+            const payload = {
+                model: selectedModel,
+                messages: [ {role:'system', content:systemMsg}, {role:'user', content:userMsg} ],
+                temperature: 0.85,
+                stream: useStream
+            };
+
+            const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+                method:'POST', headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}`},
+                body: JSON.stringify(payload), signal: currentAbortController.signal
+            });
+            if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            if(useStream) {
+                const reader = res.body.getReader(); const decoder = new TextDecoder();
+                let fullText = ''; let buffer = ''; replyEl.textContent = '';
+                while(true) {
+                    const {done, value} = await reader.read(); if(done) break;
+                    buffer += decoder.decode(value, {stream:true});
+                    const lines = buffer.split('\n'); buffer = lines.pop();
+                    for(const line of lines){
+                        const trimmed = line.trim(); if(!trimmed.startsWith('data:')) continue;
+                        const dataStr = trimmed.slice(5).trim(); if(dataStr==='[DONE]') continue;
+                        try {
+                            const chunk = JSON.parse(dataStr); const delta = chunk.choices?.[0]?.delta?.content||'';
+                            if(delta){ fullText += delta; replyEl.textContent = fullText; replyEl.scrollTop = replyEl.scrollHeight; }
+                        } catch(e){}
+                    }
+                }
+            } else {
+                const data = await res.json();
+                replyEl.textContent = (data.choices?.[0]?.message?.content || '').trim();
+            }
+            document.getElementById(statusId).textContent = '✅ 生成完成！';
+            return true;
+        } catch(err) {
+            console.error(err); document.getElementById(statusId).textContent = `❌ 出错：${err.message}`;
+            return false;
+        } finally {
+            btn.disabled = false; currentAbortController = null;
+        }
+    }
+
+    function copyRawReply(type) {
+        const el = document.getElementById('aiRawReplyContent' + type);
+        if (el) navigator.clipboard.writeText(el.textContent).then(() => showToast('📋 已复制内容'));
+    }
+
+    // ============================================================
+    //  AI 模式 1：生成人设卡
+    // ============================================================
     const MODULE_JSON_SCHEMA = {
         basic: `    "basic": { "char_name":"", "chinese_name":"", "nickname":"", "age":"", "birthday_date":"", "birthday_zodiac":"", "gender":"", "height":"", "identity":[], "archetype":[], "social":[] }`,
         background: `    "background": { "childhood_range":"0-12岁", "childhood":[], "teenage_range":"13-18岁", "teenage":[], "youth_range":"19-24岁", "youth":[], "current_range":"", "current":[] }`,
@@ -1230,7 +943,7 @@
         nsfw: `    "nsfw": { "experiences":"", "sexual_orientation":"", "sexual_role":[], "sexual_habits":[], "kinks":[], "limits":[] }`
     };
 
-    function getSelectedModules() { return Array.from(document.querySelectorAll('input[name="aiModule"]:checked')).map(el=>el.value); }
+    function getSelectedCharModules() { return Array.from(document.querySelectorAll('input[name="aiModule"]:checked')).map(el=>el.value); }
     function toggleJsonPreview() {
         const preview = document.getElementById('moduleJsonPreview'); const toggle = document.getElementById('jsonPreviewToggle');
         if(preview.style.display==='none'){ preview.style.display=''; toggle.classList.add('open'); updateModulePreview(); }
@@ -1238,295 +951,147 @@
     }
     function updateModulePreview() {
         const el = document.getElementById('moduleJsonPreview'); if(!el || el.style.display==='none') return;
-        const modules = getSelectedModules(); if(!modules.length){ el.textContent='未勾选'; return; }
+        const modules = getSelectedCharModules(); if(!modules.length){ el.textContent='未勾选'; return; }
         const lines = modules.map(m => MODULE_JSON_SCHEMA[m] || '').filter(Boolean);
         el.textContent = '{\n  "某某主角的名字": {\n' + lines.join(',\n') + '\n  }\n}';
     }
     document.querySelectorAll('input[name="aiModule"]').forEach(cb => cb.addEventListener('change', updateModulePreview));
 
-    function copyRawReply() {
-        const el = document.getElementById('aiRawReplyContent');
-        if (el) {
-            navigator.clipboard.writeText(el.textContent).then(() => showToast('📋 已复制生成内容'));
-        }
-    }
-
-    // 将完整的JSON字符串解析并渲染成单独的角色块
-    function parseAndSplitProtagonistsReply(fullText) {
-        let cleanText = fullText.trim();
-        if (cleanText.startsWith('```')) {
-            const match = cleanText.match(/```(?:json)?\s*([\s\S]*?)```/);
-            if (match) cleanText = match[1].trim();
-        }
-
-        try {
-            const parsed = JSON.parse(cleanText);
-            if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-                const keys = Object.keys(parsed);
-                if (keys.length > 0) {
-                    const wrapper = document.getElementById('aiRawReplyWrapper');
-                    wrapper.innerHTML = '';
-
-                    const headerDiv = document.createElement('div');
-                    headerDiv.className = 'ai-raw-reply-header';
-
-                    const titleH4 = document.createElement('h4');
-                    titleH4.textContent = '生成内容 (按主角拆分)';
-
-                    const copyAllBtn = document.createElement('button');
-                    copyAllBtn.type = 'button';
-                    copyAllBtn.className = 'btn-copy-small';
-                    copyAllBtn.textContent = '📋 复制全部原始 JSON';
-                    copyAllBtn.onclick = () => {
-                        navigator.clipboard.writeText(cleanText).then(() => showToast('📋 已复制全部 JSON 内容'));
-                    };
-
-                    headerDiv.appendChild(titleH4);
-                    headerDiv.appendChild(copyAllBtn);
-                    wrapper.appendChild(headerDiv);
-
-                    keys.forEach(key => {
-                        const charData = parsed[key];
-                        const charJsonStr = JSON.stringify(charData, null, 2);
-
-                        const charDiv = document.createElement('div');
-                        charDiv.style.marginBottom = '16px';
-                        charDiv.style.border = '1px solid var(--border-color)';
-                        charDiv.style.borderRadius = 'var(--radius-sm)';
-                        charDiv.style.padding = '14px';
-                        charDiv.style.background = '#ffffff';
-
-                        const charHeader = document.createElement('div');
-                        charHeader.style.display = 'flex';
-                        charHeader.style.justifyContent = 'space-between';
-                        charHeader.style.alignItems = 'center';
-                        charHeader.style.marginBottom = '10px';
-                        charHeader.style.paddingBottom = '8px';
-                        charHeader.style.borderBottom = '1px dashed #e1e8ed';
-
-                        const charTitle = document.createElement('h5');
-                        charTitle.style.fontSize = '1rem';
-                        charTitle.style.color = 'var(--primary-hover)';
-                        charTitle.textContent = `📝 主角：${key}`;
-
-                        const charCopyBtn = document.createElement('button');
-                        charCopyBtn.type = 'button';
-                        charCopyBtn.className = 'btn-copy-small';
-                        charCopyBtn.textContent = '📋 复制该角色';
-                        charCopyBtn.onclick = () => {
-                            navigator.clipboard.writeText(charJsonStr).then(() => showToast(`📋 已复制 ${key} 的人设`));
-                        };
-
-                        charHeader.appendChild(charTitle);
-                        charHeader.appendChild(charCopyBtn);
-                        charDiv.appendChild(charHeader);
-
-                        const charContent = document.createElement('div');
-                        charContent.className = 'ai-raw-reply-content';
-                        charContent.style.minHeight = 'auto';
-                        charContent.style.maxHeight = '300px';
-                        charContent.style.border = 'none';
-                        charContent.style.padding = '0';
-                        charContent.style.margin = '0';
-                        charContent.textContent = charJsonStr;
-
-                        charDiv.appendChild(charContent);
-                        wrapper.appendChild(charDiv);
-                    });
-                }
-            }
-        } catch (e) {
-            console.log('API 返回结果未完全遵循 JSON 结构或解析失败，保持整体显示。', e);
-        }
-    }
-
-    // 触发 AI 生成
     async function generateWithAI() {
-        const baseUrl = document.getElementById('aiBaseUrl').value.trim().replace(/\/+$/, '');
-        const apiKey = document.getElementById('aiApiKey').value.trim();
         const persona = document.getElementById('aiPersona').value.trim();
         const sendTrope = document.getElementById('sendTropeToAi').checked;
-        const trope = document.getElementById('aiTrope').value.trim();
-        const modules = getSelectedModules();
-        const useStream = document.getElementById('enableStream').checked;
+        const trope = getLastInspo().join(' / ');
+        const modules = getSelectedCharModules();
 
-        // 获取小世界信息
         const wId = getCurWorldId(); const wData = getWorlds()[wId];
         if(!wData || wData.protagonists.length === 0){ showToast('请至少在小世界中添加一名主角！'); return; }
-        const wSetting = wData.setting || '无详细世界观说明';
+        const wWorldbook = document.getElementById('worldWorldbook').value.trim() || '暂无详细世界书内容';
         const protosText = wData.protagonists.map(p => `【主角】：${p.name || '未命名'} \n【属性/定位】：${p.role} \n【设定简述】：${p.brief}`).join('\n\n');
 
-        if(!baseUrl){ showToast('请填写 API 地址'); return; }
-        if(!selectedModel){ showToast('请选择模型'); return; }
         if(!modules.length){ showToast('请勾选至少一个生成模块'); return; }
 
-        const btn = document.getElementById('btnGenerate'); btn.disabled = true;
+        document.getElementById('aiRawReplySectionChar').style.display = '';
 
-        // 重置和展现生成面版
-        const rawReplySection = document.getElementById('aiRawReplySection'); rawReplySection.style.display = '';
-        const rawReplyWrapper = document.getElementById('aiRawReplyWrapper');
-        rawReplyWrapper.innerHTML = `
-            <div class="ai-raw-reply-header">
-                <h4>生成内容 (JSON)</h4>
-                <button type="button" class="btn-copy-small" onclick="copyRawReply()">📋 复制全部</button>
-            </div>
-            <div class="ai-raw-reply-content" id="aiRawReplyContent">⏳ 生成中，请耐心稍候…</div>
-        `;
-        const rawReplyEl = document.getElementById('aiRawReplyContent');
-        document.getElementById('aiStatusTextGen').textContent = '⏳ 正在请求 API...';
-
-        // 拼装 Prompt
         const guideTexts = modules.map(m => {
             const text = document.getElementById('guide_'+m)?.value.trim(); return text ? `[${m}]：${text}` : '';
         }).filter(Boolean);
-
         const schemaStr = '{\n  "该主角的名字": {\n' + modules.map(m => MODULE_JSON_SCHEMA[m] || '').join(',\n') + '\n  }\n}';
 
         const systemMsg = `<persona>\n${persona}\n</persona>`;
         const userMsg = `
-<world_setting>
-${wSetting}
-</world_setting>
-
-<protagonists_to_generate>
-${protosText}
-</protagonists_to_generate>
-
+<worldbook>\n${wWorldbook}\n</worldbook>
+<protagonists_to_generate>\n${protosText}\n</protagonists_to_generate>
 ${(sendTrope && trope) ? `<trope>\n本文相关设定灵感词汇：${trope}\n</trope>\n` : ''}
-
-<module_guides>
-${guideTexts.join('\n')}
-</module_guides>
+<module_guides>\n${guideTexts.join('\n')}\n</module_guides>
 
 <instructions>
-请结合【world_setting】和【trope】，为【protagonists_to_generate】里的【每一位】主角进行丰富完善，生成详细的人设卡。
+请结合【worldbook】和【trope】，为【protagonists_to_generate】里的【每一位】主角进行丰富完善，生成详细的人设卡。
 【注意：你需要将每一个主角的数据放到同一个 JSON 对象中，使用各自的名字作为顶级键名！】
 请严格按照以下 JSON 格式结构返回，不要输出任何 Markdown 标记或多余的解释文字。列表字段提供 2-5 个精炼描述。
 
 参考结构：
 ${schemaStr}
-</instructions>
-`;
+</instructions>`;
 
-        try {
-            if(useStream) await generateStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl);
-            else await generateNonStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl);
-            document.getElementById('aiStatusTextGen').textContent = '✅ 生成完成！';
-
-            parseAndSplitProtagonistsReply(rawReplyEl.textContent);
-
-        } catch(err) {
-            console.error(err); document.getElementById('aiStatusTextGen').textContent = `❌ 出错：${err.message}`;
-        } finally {
-            btn.disabled = false; currentAbortController = null;
-        }
+        await executeAiGeneration(systemMsg, userMsg, 'aiRawReplyContentChar', 'btnGenerateChar', 'aiStatusTextChar');
     }
 
-    async function generateNonStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl) {
-        const res = await fetch(`${baseUrl}/v1/chat/completions`, {
-            method:'POST', headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}`},
-            body: JSON.stringify({ model: selectedModel, messages: [ {role:'system', content:systemMsg}, {role:'user', content:userMsg} ], temperature: 0.85 })
-        });
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const content = data.choices?.[0]?.message?.content || '';
-        rawReplyEl.textContent = content.trim();
-    }
+    // ============================================================
+    //  AI 模式 2：生成世界书
+    // ============================================================
+    function getSelectedWorldModules() { return Array.from(document.querySelectorAll('input[name="worldModule"]:checked')).map(el=>el.value); }
 
-    async function generateStream(baseUrl, apiKey, systemMsg, userMsg, rawReplyEl) {
-        currentAbortController = new AbortController();
-        const res = await fetch(`${baseUrl}/v1/chat/completions`, {
-            method:'POST', headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}`},
-            body: JSON.stringify({ model: selectedModel, messages: [ {role:'system', content:systemMsg}, {role:'user', content:userMsg} ], temperature: 0.85, stream: true }),
-            signal: currentAbortController.signal
-        });
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    async function generateWorldbookWithAI() {
+        const persona = document.getElementById('aiWorldPersona').value.trim();
+        const sendTrope = document.getElementById('sendTropeToWorld').checked;
+        const trope = getLastInspo().join(' / ');
+        const modules = getSelectedWorldModules();
 
-        const reader = res.body.getReader(); const decoder = new TextDecoder();
-        let fullText = ''; let buffer = ''; rawReplyEl.textContent = '';
+        const wId = getCurWorldId(); const wData = getWorlds()[wId];
+        if(!wData){ showToast('未找到当前世界'); return; }
+        const protosText = wData.protagonists.map(p => `【主角】：${p.name || '未命名'} \n【属性/定位】：${p.role}`).join('\n');
 
-        while(true) {
-            const {done, value} = await reader.read(); if(done) break;
-            buffer += decoder.decode(value, {stream:true});
-            const lines = buffer.split('\n'); buffer = lines.pop();
-            for(const line of lines){
-                const trimmed = line.trim(); if(!trimmed.startsWith('data:')) continue;
-                const dataStr = trimmed.slice(5).trim(); if(dataStr==='[DONE]') continue;
-                try {
-                    const chunk = JSON.parse(dataStr); const delta = chunk.choices?.[0]?.delta?.content||'';
-                    if(delta){ fullText += delta; rawReplyEl.textContent = fullText; rawReplyEl.scrollTop = rawReplyEl.scrollHeight; }
-                } catch(e){}
+        if(!modules.length){ showToast('请勾选至少一个生成模块'); return; }
+
+        const guideTexts = [];
+        modules.forEach(m => {
+            const text = document.getElementById('wb_'+m)?.value.trim();
+            if(text) {
+                guideTexts.push(`  ${m}: |\n    (请根据以下要求扩写：${text})`);
             }
+        });
+
+        if(guideTexts.length === 0) {
+            showToast('请至少在一个模块中输入具体的扩写要求');
+            return;
         }
-        if(!fullText) throw new Error('流式传输未返回内容');
+
+        document.getElementById('aiRawReplySectionWorld').style.display = '';
+
+        const schemaStr = `worldbook:\n${guideTexts.join('\n')}`;
+
+        const systemMsg = `<persona>\n${persona}\n</persona>`;
+        const userMsg = `
+<protagonists>\n${protosText}\n</protagonists>
+${(sendTrope && trope) ? `<trope>\n相关设定灵感词汇：${trope}\n</trope>\n` : ''}
+
+<instructions>
+请基于以上人物和灵感，深度扩写并生成一部详细的《世界书大纲》。
+你需要扩写以下模块，并严格使用 YAML 格式输出，模块的值使用多行字符串 ( | ) 格式，方便人类阅读。除了 YAML 以外，不要输出任何多余的解释废话或 Markdown 代码块外壳。
+
+YAML 模板结构要求：
+${schemaStr}
+</instructions>`;
+
+        const success = await executeAiGeneration(systemMsg, userMsg, 'aiRawReplyContentWorld', 'btnGenerateWorld', 'aiStatusTextWorld');
+
+        // 如果生成成功，自动填入并保存到小世界的 textarea 中
+        if(success) {
+            const rawContent = document.getElementById('aiRawReplyContentWorld').textContent;
+            // 清理可能存在的 Markdown 代码块包裹
+            let cleanYaml = rawContent.replace(/```yaml/g, '').replace(/```/g, '').trim();
+
+            const wbTextarea = document.getElementById('worldWorldbook');
+            wbTextarea.value = cleanYaml;
+            autoSaveWorld();
+            showToast('✅ 世界书已自动更新并保存到顶部小世界面板');
+        }
     }
 
     // ============================================================
-    //  故事开头生成逻辑
+    //  AI 模式 3：生成故事开头
     // ============================================================
-    function copyStoryReply() {
-        const content = document.getElementById('aiStoryReplyContent').textContent;
-        navigator.clipboard.writeText(content).then(() => showToast('📋 已复制故事正文'));
-    }
-
     async function generateStoryWithAI() {
-        const baseUrl = document.getElementById('aiBaseUrl').value.trim().replace(/\/+$/, '');
-        const apiKey = document.getElementById('aiApiKey').value.trim();
         const persona = document.getElementById('aiStoryPersona').value.trim();
-
         const sendTrope = document.getElementById('sendTropeToStory').checked;
-        const trope = getLastInspo().join(' / '); // 读取选中的全局灵感
-
-        const selectedStoryKeywords = getSelectedStoryKeywords().join('、'); // 读取专属故事关键词
-
+        const trope = getLastInspo().join(' / ');
+        const selectedStoryKeywords = getSelectedStoryKeywords().join('、');
         const request = document.getElementById('aiStoryRequest').value.trim();
-        const useStream = document.getElementById('enableStream').checked;
 
-        // 获取小世界信息
         const wId = getCurWorldId(); const wData = getWorlds()[wId];
         if(!wData || wData.protagonists.length === 0){ showToast('请至少在小世界中添加一名主角！'); return; }
-        const wSetting = wData.setting || '无详细世界观说明';
+
+        const wWorldbook = document.getElementById('worldWorldbook').value.trim(); // 获取世界书内容
         const protosText = wData.protagonists.map(p => `【主角】：${p.name || '未命名'} \n【属性/定位】：${p.role} \n【设定简述】：${p.brief}`).join('\n\n');
 
-        if(!baseUrl){ showToast('请填写 API 地址'); return; }
-        if(!selectedModel){ showToast('请选择模型'); return; }
         if(!request){ showToast('具体要求不能为空'); return; }
 
-        const btn = document.getElementById('btnGenerateStory'); btn.disabled = true;
-        const replySection = document.getElementById('aiStoryReplySection'); replySection.style.display = '';
-        const replyEl = document.getElementById('aiStoryReplyContent'); replyEl.textContent = '⏳ 构思情节中，请稍候…';
-        document.getElementById('aiStoryStatusText').textContent = '⏳ 正在请求 API...';
+        document.getElementById('aiRawReplySectionStory').style.display = '';
 
-        const authorName = document.getElementById('userNameInput').value.trim();
-
-        const systemMsg = `<persona>\n${persona}\n${authorName ? `你的笔名/用户名是：${authorName}。` : ''}\n</persona>`;
+        const systemMsg = `<persona>\n${persona}\n</persona>`;
         const userMsg = `
-<world_setting>
-${wSetting}
-</world_setting>
+${wWorldbook ? `<worldbook>\n${wWorldbook}\n</worldbook>` : ''}
 
-<protagonists>
-${protosText}
-</protagonists>
+<protagonists>\n${protosText}\n</protagonists>
 
 ${(sendTrope && trope) ? `<trope>\n本文相关设定灵感词汇：${trope}\n请务必将以上灵感词汇融入作为本章情节的切入点。\n</trope>\n` : ''}
 
 ${(selectedStoryKeywords) ? `<keywords>\n核心场景/关键词：${selectedStoryKeywords}\n请务必将这些关键词代表的元素、动作或氛围自然地融入到故事正文中，作为剧情展开的灵感参考。\n</keywords>\n` : ''}
 
-<instructions>
-${request}
-</instructions>
+<instructions>\n${request}\n</instructions>
 `;
 
-        try {
-            if(useStream) await generateStream(baseUrl, apiKey, systemMsg, userMsg, replyEl);
-            else await generateNonStream(baseUrl, apiKey, systemMsg, userMsg, replyEl);
-            document.getElementById('aiStoryStatusText').textContent = '✅ 生成完成！';
-        } catch(err) {
-            console.error(err); document.getElementById('aiStoryStatusText').textContent = `❌ 出错：${err.message}`;
-        } finally {
-            btn.disabled = false; currentAbortController = null;
-        }
+        await executeAiGeneration(systemMsg, userMsg, 'aiRawReplyContentStory', 'btnGenerateStory', 'aiStoryStatusText');
     }
 
     // ============================================================
@@ -1536,16 +1101,12 @@ ${request}
     const SUPABASE_KEY = 'sb_publishable_G3_WV2wpOc8vnXntHM0THQ_npmXJaRG';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 1. 保存当前所有数据到云端
     async function saveToCloud() {
         const user = document.getElementById('cloudUsername').value.trim();
         if (!user) return alert("请先输入用户名！");
 
-        document.getElementById('syncStatus').innerText = "⏳ 正在打包数据...";
-
+        document.getElementById('syncStatus').innerText = "⏳ 正在打包...";
         const dataToSave = {};
-        // 自动抓取 LocalStorage 中所有你网页产生的数据
-        // 遍历所有 key，只要包含这些关键词的都备份
         const filterKeywords = ['world', 'pool', 'provider', 'user', 'name', 'trope', 'persona'];
 
         for (let i = 0; i < localStorage.length; i++) {
@@ -1554,58 +1115,29 @@ ${request}
                 dataToSave[key] = localStorage.getItem(key);
             }
         }
+        if (Object.keys(dataToSave).length === 0) return alert("本地没有发现可备份的数据！");
 
-        // 检查一下是否抓到了空数据
-        if (Object.keys(dataToSave).length === 0) {
-            return alert("警告：本地没有发现可备份的数据！请先确保页面已有内容。");
-        }
+        const { error } = await _supabase.from('user_configs').upsert({
+            username: user, app_state: dataToSave, updated_at: new Date().toISOString()
+        });
 
-        const { error } = await _supabase
-            .from('user_configs')
-            .upsert({
-                username: user,
-                app_state: dataToSave,
-                updated_at: new Date().toISOString()
-            });
-
-        if (error) {
-            alert("备份失败: " + error.message);
-        } else {
-            alert("✅ 备份成功！请在另一端尝试拉取。");
-            document.getElementById('syncStatus').innerText = "✅ 已同步 " + new Date().toLocaleTimeString();
-        }
+        if (error) alert("备份失败: " + error.message);
+        else { alert("✅ 备份成功！"); document.getElementById('syncStatus').innerText = "✅ 已同步 " + new Date().toLocaleTimeString(); }
     }
 
-    // 2. 从云端拉取数据到本地
     async function loadFromCloud() {
         const user = document.getElementById('cloudUsername').value.trim();
         if (!user) return alert("请输入用户名");
 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         document.getElementById('syncStatus').innerText = "⏳ 正在同步...";
-
         try {
-            const { data, error } = await supabaseClient
-                .from('user_configs')
-                .select('app_state')
-                .eq('username', user)
-                .single();
-
+            const { data, error } = await _supabase.from('user_configs').select('app_state').eq('username', user).single();
             if (error) throw error;
-
             if (data && data.app_state) {
-                // 写入本地存储
-                Object.keys(data.app_state).forEach(key => {
-                    localStorage.setItem(key, data.app_state[key]);
-                });
-                alert("✅ 同步成功！正在刷新页面...");
-                location.reload();
-            } else {
-                alert("该用户名下没有发现云端数据。");
-            }
-        } catch (err) {
-            alert("同步失败: " + err.message);
-        }
+                Object.keys(data.app_state).forEach(key => localStorage.setItem(key, data.app_state[key]));
+                alert("✅ 同步成功！正在刷新页面..."); location.reload();
+            } else { alert("该用户名下没有云端数据。"); }
+        } catch (err) { alert("同步失败: " + err.message); }
     }
 
     function initCloudUsername() {
@@ -1613,20 +1145,49 @@ ${request}
         if(name) document.getElementById('cloudUsername').value = name;
     }
 
-
     // ============================================================
     //  初始化加载
     // ============================================================
-    initCloudUsername(); // 恢复云端输入框账号
-    loadUserName();      // 恢复创作者笔名
+    initCloudUsername();
     initWorldSystem();
-    renderInspoTags('persona');
-    renderInspoTags('trope');
-    renderInspoTags('storyKeyword');
-    updateCurrentInspoDisplay();
     renderNamerTags('surname');
     renderNamerTags('charname');
     initProviderSystem();
+
+    function toggleTheme() {
+        const html = document.documentElement;
+        const checkbox = document.getElementById('checkbox');
+
+        if (checkbox.checked) {
+            html.setAttribute('data-theme', 'dark');
+            localStorage.setItem('ss_theme_v1', 'dark');
+        } else {
+            html.setAttribute('data-theme', 'light');
+            localStorage.setItem('ss_theme_v1', 'light');
+        }
+    }
+
+    function updateThemeButton(theme) {
+        const iconEl = document.querySelector('#themeToggle .theme-icon');
+        const textEl = document.querySelector('#themeToggle .theme-text');
+
+        if (iconEl && textEl) {
+            if (theme === 'dark') {
+                iconEl.innerHTML = '☀️'; // 深色模式显示太阳
+                textEl.innerHTML = '浅色模式';
+            } else {
+                iconEl.innerHTML = '🌙'; // 亮色模式显示月亮
+                textEl.innerHTML = '深色模式';
+            }
+        }
+    }
+
+    // 初始化
+    (function initTheme() {
+        const savedTheme = localStorage.getItem('user-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeButton(savedTheme);
+    })();
 </script>
 </body>
 </html>
