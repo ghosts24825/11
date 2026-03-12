@@ -1541,35 +1541,38 @@ ${request}
         const user = document.getElementById('cloudUsername').value.trim();
         if (!user) return alert("请先输入用户名！");
 
-        // 记录下用户名，方便下次不用重复输入
-        localStorage.setItem('ss_cloud_username_v1', user);
+        document.getElementById('syncStatus').innerText = "⏳ 正在打包数据...";
 
-        document.getElementById('syncStatus').innerText = "⏳ 正在连接服务器...";
-
-        const keys = ['world_system_v2', 'api_providers', 'persona_pool', 'trope_pool', 'surname_pool', 'charname_pool', 'story_keyword_pool'];
         const dataToSave = {};
-        keys.forEach(k => { dataToSave[k] = localStorage.getItem(k); });
+        // 自动抓取 LocalStorage 中所有你网页产生的数据
+        // 遍历所有 key，只要包含这些关键词的都备份
+        const filterKeywords = ['world', 'pool', 'provider', 'user', 'name', 'trope', 'persona'];
 
-        try {
-            const { data, error } = await _supabase
-                .from('user_configs')
-                .upsert({
-                    username: user,
-                    app_state: dataToSave,
-                    updated_at: new Date().toISOString()
-                });
-
-            if (error) {
-                console.error("Supabase Error:", error);
-                alert("备份失败，错误代码：" + error.code + "\n信息：" + error.message);
-                document.getElementById('syncStatus').innerText = "❌ 备份失败";
-            } else {
-                alert("✅ 备份成功！数据已存入云端。");
-                document.getElementById('syncStatus').innerText = "✅ 已备份 " + new Date().toLocaleTimeString();
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (filterKeywords.some(kw => key.toLowerCase().includes(kw))) {
+                dataToSave[key] = localStorage.getItem(key);
             }
-        } catch (e) {
-            console.error("Critical Error:", e);
-            alert("发生严重错误，请检查网络或 URL 配置：\n" + e.message);
+        }
+
+        // 检查一下是否抓到了空数据
+        if (Object.keys(dataToSave).length === 0) {
+            return alert("警告：本地没有发现可备份的数据！请先确保页面已有内容。");
+        }
+
+        const { error } = await _supabase
+            .from('user_configs')
+            .upsert({
+                username: user,
+                app_state: dataToSave,
+                updated_at: new Date().toISOString()
+            });
+
+        if (error) {
+            alert("备份失败: " + error.message);
+        } else {
+            alert("✅ 备份成功！请在另一端尝试拉取。");
+            document.getElementById('syncStatus').innerText = "✅ 已同步 " + new Date().toLocaleTimeString();
         }
     }
 
@@ -1578,8 +1581,11 @@ ${request}
         const user = document.getElementById('cloudUsername').value.trim();
         if (!user) return alert("请输入用户名");
 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        document.getElementById('syncStatus').innerText = "⏳ 正在同步...";
+
         try {
-            const { data, error } = await _supabase
+            const { data, error } = await supabaseClient
                 .from('user_configs')
                 .select('app_state')
                 .eq('username', user)
@@ -1588,20 +1594,14 @@ ${request}
             if (error) throw error;
 
             if (data && data.app_state) {
-                // 关键：先把本地现有的清理一下，防止干扰
-                // localStorage.clear(); // 如果你怕误删别的可以不写这行
-
+                // 写入本地存储
                 Object.keys(data.app_state).forEach(key => {
-                    const val = data.app_state[key];
-                    if (val !== null && val !== undefined) {
-                        localStorage.setItem(key, val);
-                        console.log(`已更新 Key: ${key}`);
-                    }
+                    localStorage.setItem(key, data.app_state[key]);
                 });
-
-                alert("✅ 同步成功！页面即将刷新。");
-                // 延迟一秒刷新，确保存储写入完成
-                setTimeout(() => { location.reload(); }, 500);
+                alert("✅ 同步成功！正在刷新页面...");
+                location.reload();
+            } else {
+                alert("该用户名下没有发现云端数据。");
             }
         } catch (err) {
             alert("同步失败: " + err.message);
