@@ -458,3 +458,25 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 
      input:checked + .slider .icon-sun { opacity: 1; color: #f39c12; }
      input:checked + .slider .icon-moon { opacity: 0; }
+
+     /* 专门针对夜间模式下输入框和文本域的调整 */
+     [data-theme="dark"] input,
+     [data-theme="dark"] textarea,
+     [data-theme="dark"] select {
+         background-color: #1a1a1a !important; /* 文字框背景设为深黑色 */
+         color: #e0e0e0 !important;           /* 输入的文字设为浅灰色/白色 */
+         border: 1px solid #334155 !important; /* 边框颜色变深，不刺眼 */
+     }
+
+     /* 修改占位符（提醒文字）的颜色 */
+     [data-theme="dark"] input::placeholder,
+     [data-theme="dark"] textarea::placeholder {
+         color: #71717a !important;           /* 提醒文字设为中浅灰色 */
+     }
+
+     /* 如果你的详细大纲文字框有特定的类名，比如 .world-outline-input */
+     [data-theme="dark"] .ai-raw-reply-content,
+     [data-theme="dark"] .ai-guide-module textarea {
+         background-color: #000000 !important; /* 纯黑背景 */
+         color: #d1d5db !important;           /* 浅灰文字 */
+     }
