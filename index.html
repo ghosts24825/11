@@ -1539,39 +1539,37 @@ ${request}
     // 1. 保存当前所有数据到云端
     async function saveToCloud() {
         const user = document.getElementById('cloudUsername').value.trim();
-        if (!user) return alert("请先输入云端账号名！");
+        if (!user) return alert("请先输入用户名！");
 
-        // 记住云端用户名到本地缓存，方便下次使用
+        // 记录下用户名，方便下次不用重复输入
         localStorage.setItem('ss_cloud_username_v1', user);
 
-        document.getElementById('syncStatus').innerText = "⏳ 正在上传...";
+        document.getElementById('syncStatus').innerText = "⏳ 正在连接服务器...";
 
-        // 程序中实际使用的所有 localStorage key (自动收集真实数据)
-        const keys = [
-            LS_WORLDS, LS_CUR_WORLD,
-            LS_INSPO_PERSONA, LS_INSPO_TROPE, LS_INSPO_STORY_KEYWORD,
-            LS_INSPO_LAST, LS_STORY_KEYWORD_LAST,
-            LS_SURNAMES, LS_CHARNAMES,
-            LS_AI_PROVIDERS, LS_AI_CURRENT_P,
-            LS_USER_NAME
-        ];
-
+        const keys = ['world_system_v2', 'api_providers', 'persona_pool', 'trope_pool', 'surname_pool', 'charname_pool', 'story_keyword_pool'];
         const dataToSave = {};
-        keys.forEach(k => {
-            const val = localStorage.getItem(k);
-            if (val !== null) dataToSave[k] = val;
-        });
+        keys.forEach(k => { dataToSave[k] = localStorage.getItem(k); });
 
         try {
-            const { error } = await _supabase
+            const { data, error } = await _supabase
                 .from('user_configs')
-                .upsert({ username: user, app_state: dataToSave, updated_at: new Date() }, { onConflict: 'username' });
+                .upsert({
+                    username: user,
+                    app_state: dataToSave,
+                    updated_at: new Date().toISOString()
+                });
 
-            if (error) throw error;
-            document.getElementById('syncStatus').innerText = "✅ 已备份 " + new Date().toLocaleTimeString();
-        } catch (error) {
-            alert("备份失败: " + error.message + "\n(请检查 Supabase 表 'user_configs' 是否存在并开放了相应的权限)");
-            document.getElementById('syncStatus').innerText = "❌ 备份失败";
+            if (error) {
+                console.error("Supabase Error:", error);
+                alert("备份失败，错误代码：" + error.code + "\n信息：" + error.message);
+                document.getElementById('syncStatus').innerText = "❌ 备份失败";
+            } else {
+                alert("✅ 备份成功！数据已存入云端。");
+                document.getElementById('syncStatus').innerText = "✅ 已备份 " + new Date().toLocaleTimeString();
+            }
+        } catch (e) {
+            console.error("Critical Error:", e);
+            alert("发生严重错误，请检查网络或 URL 配置：\n" + e.message);
         }
     }
 
