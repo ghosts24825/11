@@ -1576,10 +1576,7 @@ ${request}
     // 2. 从云端拉取数据到本地
     async function loadFromCloud() {
         const user = document.getElementById('cloudUsername').value.trim();
-        if (!user) return alert("请先输入云端账号名！");
-
-        localStorage.setItem('ss_cloud_username_v1', user);
-        document.getElementById('syncStatus').innerText = "⏳ 正在下载...";
+        if (!user) return alert("请输入用户名");
 
         try {
             const { data, error } = await _supabase
@@ -1591,19 +1588,23 @@ ${request}
             if (error) throw error;
 
             if (data && data.app_state) {
-                // 将云端数据写入本地缓存
+                // 关键：先把本地现有的清理一下，防止干扰
+                // localStorage.clear(); // 如果你怕误删别的可以不写这行
+
                 Object.keys(data.app_state).forEach(key => {
-                    if (data.app_state[key]) localStorage.setItem(key, data.app_state[key]);
+                    const val = data.app_state[key];
+                    if (val !== null && val !== undefined) {
+                        localStorage.setItem(key, val);
+                        console.log(`已更新 Key: ${key}`);
+                    }
                 });
-                alert("✅ 同步成功！点击确定将刷新页面加载最新数据。");
-                location.reload();
-            } else {
-                alert("云端没有该用户的数据！");
-                document.getElementById('syncStatus').innerText = "⚠️ 无数据";
+
+                alert("✅ 同步成功！页面即将刷新。");
+                // 延迟一秒刷新，确保存储写入完成
+                setTimeout(() => { location.reload(); }, 500);
             }
-        } catch (error) {
-            alert("拉取失败: " + error.message);
-            document.getElementById('syncStatus').innerText = "❌ 拉取失败";
+        } catch (err) {
+            alert("同步失败: " + err.message);
         }
     }
 
