@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小故事人设卡生成器</title>
+    <title>小说人设生成器</title>
+    <!-- 引入 Supabase 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             /* 整体修改为淡蓝色系 */
@@ -59,6 +61,7 @@
             background: var(--primary-light); color: var(--primary-color);
             border-radius: 12px; display: flex; align-items: center;
             justify-content: center; font-size: 1.2rem;
+            flex-shrink: 0;
         }
         .section-header h2 { font-size: 1.25rem; color: var(--text-main); font-weight: 700; }
 
@@ -259,11 +262,32 @@
     </style>
 </head>
 <body>
+
+<!-- 云端同步模块 -->
+<div style="background: #e3f2fd; padding: 15px; border-bottom: 2px solid #3498db; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;">
+    <span style="font-weight: bold; color: #2c3e50;">☁️ 云端同步：</span>
+    <input type="text" id="cloudUsername" placeholder="输入云端账号名" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 150px;">
+    <button onclick="saveToCloud()" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">备份到云端</button>
+    <button onclick="loadFromCloud()" style="padding: 8px 15px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">从云端拉取</button>
+    <span id="syncStatus" style="font-size: 12px; color: #7f8c8d; min-width: 100px;">尚未连接</span>
+</div>
+
 <div class="container">
     <header>
-        <h1>小故事人设卡生成器</h1>
+        <h1>小说人设生成器</h1>
         <p>Short Story Character Card Generator</p>
     </header>
+
+    <!-- ===== 创作者用户名/笔名输入模块 ===== -->
+    <div class="card-section" style="padding: 16px 24px; margin-bottom: 25px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="section-icon" style="width: 38px; height: 38px; font-size: 1.1rem;">👤</div>
+            <div style="flex: 1; display: flex; flex-direction: column;">
+                <label for="userNameInput" style="font-size: 0.85rem; color: var(--text-sub); font-weight: 600; margin-bottom: 4px;">创作者用户名 / 笔名</label>
+                <input type="text" id="userNameInput" placeholder="输入您的名字，开启创作之旅..." oninput="saveUserName()" style="padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--input-bg); font-weight: 600; color: var(--primary-hover); transition: all 0.2s;">
+            </div>
+        </div>
+    </div>
 
     <div class="card-section" id="small-world">
         <div class="section-header">
@@ -589,8 +613,29 @@
                     <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
                         <input type="checkbox" id="sendTropeToStory" checked style="accent-color: var(--primary-color);">
                         <span class="ai-tag-badge">trope</span>
-                        附带已选灵感作为切入点
+                        附带全局已选灵感作为切入点
                     </label>
+                </div>
+            </div>
+
+            <!-- ===== 专属故事关键词模块 ===== -->
+            <div class="ai-block" style="background: #fbfdff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px;">
+                <div class="ai-block-label" style="margin-bottom: 6px;"><span class="ai-tag-badge" style="background:#8e44ad;">keywords</span> 故事关键词池 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub);">(点击选中/取消，AI将参考选中的词汇构建开头情节)</span></div>
+
+                <div class="inspo-input-row" style="margin-top: 10px;">
+                    <input type="text" id="storyKeywordInput" placeholder="输入你想在开头出现的元素 (例如: 雨夜、失忆、酒吧等)，按 Enter 添加…" onkeydown="inspoInputKeydown(event, 'storyKeyword')">
+                    <button type="button" class="btn-inspo-add" style="background: #8e44ad;" onclick="addInspoWord('storyKeyword')">➕ 添加</button>
+                </div>
+
+                <div class="inspo-tags" id="storyKeywordTags" style="min-height: 60px;">
+                    <span class="inspo-tag-empty">关键词库为空，添加一些场景或事件碎片吧～</span>
+                </div>
+
+                <div class="inspo-actions">
+                    <button type="button" class="btn-inspo-import" onclick="loadDefaultInspos('storyKeyword')">载入默认网文词库</button>
+                    <button type="button" class="btn-inspo-import" onclick="openImportModal('storyKeyword')">📋 批量导入</button>
+                    <button type="button" class="btn-inspo-import" onclick="exportInspoPool('storyKeyword')">📤 导出词库</button>
+                    <button type="button" class="btn-inspo-clear" onclick="clearInspoPool('storyKeyword')">清空词库</button>
                 </div>
             </div>
 
@@ -658,6 +703,19 @@
     }
     function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
     function escapeHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ============================================================
+    //  用户名保存逻辑
+    // ============================================================
+    const LS_USER_NAME = 'ss_user_name_v1';
+    function saveUserName() {
+        const name = document.getElementById('userNameInput').value.trim();
+        localStorage.setItem(LS_USER_NAME, name);
+    }
+    function loadUserName() {
+        const name = localStorage.getItem(LS_USER_NAME) || '';
+        document.getElementById('userNameInput').value = name;
+    }
 
     // ============================================================
     //  Tabs 切换
@@ -812,11 +870,13 @@
     }
 
     // ============================================================
-    //  灵感池 & 起名器
+    //  灵感池 & 起名器 & 故事关键词
     // ============================================================
     const LS_INSPO_PERSONA = 'ss_inspo_persona_v3';
     const LS_INSPO_TROPE = 'ss_inspo_trope_v3';
+    const LS_INSPO_STORY_KEYWORD = 'ss_inspo_story_keyword_v1';
     const LS_INSPO_LAST = 'ss_inspo_last_v2';
+    const LS_STORY_KEYWORD_LAST = 'ss_story_keyword_last_v1';
     const LS_SURNAMES = 'ss_surnames_v2';
     const LS_CHARNAMES = 'ss_charnames_v2';
 
@@ -838,23 +898,37 @@
         "双向暗恋"
     ];
 
+    // 默认灵感词库 - 故事关键词
+    const DEFAULT_STORY_KEYWORD = [
+        "雨夜","初雪","意外相遇","久别重逢","酒吧","街角","失忆","醉酒","擦肩而过",
+        "危机","暗巷","宴会","契约","误会","争吵","救美","被困","电梯故障","病房",
+        "相亲","车祸","晚宴逃跑","错认","停电","真心话大冒险"
+    ];
+
     const DEFAULT_SURNAMES  = ['顾','林','陆','沈','裴','贺','谢','江','傅','霍','厉','封','盛','季','宗','闻','薄','容','苏','晏','楚','萧','燕','祁','景','宁','桑','戚','越','岑','谈','郁','申','隋','诸','湛','蔺','商','秦','牧','应','白','时','向','黎','司','莫','言','唐','周','魏','韩','卓','凌','柯','宣','简','舒','喻','墨','原','池','项','单','席','路','左','余','安','乔','夏','秋','温','步','狄','卫','任','赫','滕','万','乐','年','展','曲','练','叶','迟','计','解','巫','伏','段','连','官','楼','云','宫','元','仲','严','常','武','蓝','金','冷','仇','殷','屠','房','庞','龚','屈','樊','芮','邢','倪','吉','谷','闵','卞','寇','郜','骆','曾','庄','蒲'];
     const DEFAULT_CHARNAMES = ['凛','寒','霄','霆','绝','骁','肃','彻','锋','渊','冥','沉','屹','舟','渡','重','衍','淮','深','予','衡','厉','封','寂','狂','傲','夜','苍','诀','冥','肆','镇','北','枭','乾','璟','瑜','辞','砚','墨','谦','尘','宁','意','疏','清','浅','筠','逸','怀','远','锦','昭','钰','如','予','时','珩','兰','芷','容','雅','颂','书','其','微','君','言','舒','白','朗','阳','灿','晖','燃','乐','朝','星','遇','野','川','原','禾','跃','凡','卓','鸣','晨','曦','旭','瑞','嘉','骏','帆','凯','航','昂','飞','瀚','景','诚','毅','博','拓','述','望','策','呈','寻','既','斯','逾','庭','弈','叙','既','临','予','慕','呈','裴','迟','越','陆','沈','顾','席','季','商','封','傅','闻','景','薄','晏','楚','萧','秦','谢'];
 
     function getInspoPool(category) {
-        const key = category === 'persona' ? LS_INSPO_PERSONA : LS_INSPO_TROPE;
-        try { return JSON.parse(localStorage.getItem(key)) || []; } catch(e) { return []; }
+        if (category === 'persona') return JSON.parse(localStorage.getItem(LS_INSPO_PERSONA)) || [];
+        if (category === 'trope') return JSON.parse(localStorage.getItem(LS_INSPO_TROPE)) || [];
+        if (category === 'storyKeyword') return JSON.parse(localStorage.getItem(LS_INSPO_STORY_KEYWORD)) || [];
+        return [];
     }
     function saveInspoPool(category, p) {
-        const key = category === 'persona' ? LS_INSPO_PERSONA : LS_INSPO_TROPE;
-        localStorage.setItem(key, JSON.stringify(p));
+        if (category === 'persona') localStorage.setItem(LS_INSPO_PERSONA, JSON.stringify(p));
+        if (category === 'trope') localStorage.setItem(LS_INSPO_TROPE, JSON.stringify(p));
+        if (category === 'storyKeyword') localStorage.setItem(LS_INSPO_STORY_KEYWORD, JSON.stringify(p));
     }
+
     function getLastInspo() { try { return JSON.parse(localStorage.getItem(LS_INSPO_LAST)) || []; } catch(e) { return []; } }
     function saveLastInspo(p) { localStorage.setItem(LS_INSPO_LAST, JSON.stringify(p || [])); }
 
+    function getSelectedStoryKeywords() { try { return JSON.parse(localStorage.getItem(LS_STORY_KEYWORD_LAST)) || []; } catch(e) { return []; } }
+    function saveSelectedStoryKeywords(p) { localStorage.setItem(LS_STORY_KEYWORD_LAST, JSON.stringify(p || [])); }
+
     function renderInspoTags(category) {
         const pool = getInspoPool(category);
-        const current = getLastInspo();
+        const current = category === 'storyKeyword' ? getSelectedStoryKeywords() : getLastInspo();
         const container = document.getElementById(category + 'Tags');
         container.innerHTML = '';
         if (pool.length === 0) {
@@ -864,7 +938,14 @@
         pool.forEach((word, i) => {
             const tag = document.createElement('span');
             tag.className = 'inspo-tag' + (current.includes(word) ? ' selected' : '');
-            tag.onclick = () => toggleInspoWord(word);
+            if(category === 'storyKeyword' && current.includes(word)) {
+                tag.style.background = '#8e44ad';
+                tag.style.boxShadow = '0 2px 8px rgba(142, 68, 173, 0.3)';
+            }
+            tag.onclick = () => {
+                if (category === 'storyKeyword') toggleStoryKeyword(word);
+                else toggleInspoWord(word);
+            };
             tag.innerHTML = `${escapeHtml(word)}<span class="inspo-tag-del" onclick="removeInspoWord('${category}', ${i}, event)">×</span>`;
             container.appendChild(tag);
         });
@@ -882,11 +963,17 @@
 
     function loadDefaultInspos(category) {
         const pool = getInspoPool(category);
-        const defaults = category === 'persona' ? DEFAULT_PERSONA : DEFAULT_TROPE;
+        let defaults = [];
+        if (category === 'persona') defaults = DEFAULT_PERSONA;
+        else if (category === 'trope') defaults = DEFAULT_TROPE;
+        else if (category === 'storyKeyword') defaults = DEFAULT_STORY_KEYWORD;
+
         const newPool = [...new Set([...pool, ...defaults])];
         saveInspoPool(category, newPool);
         renderInspoTags(category);
-        showToast(`✅ 已载入默认${category === 'persona' ? '人设' : '类型'}词库`);
+
+        const name = category === 'persona' ? '人设' : (category === 'trope' ? '类型' : '故事关键词');
+        showToast(`✅ 已载入默认${name}词库`);
     }
 
     function removeInspoWord(category, idx, e) {
@@ -895,28 +982,39 @@
         const removed = pool[idx];
         pool.splice(idx, 1);
         saveInspoPool(category, pool);
-        const curr = getLastInspo().filter(w => w !== removed);
-        saveLastInspo(curr);
-        renderInspoTags(category);
-        updateCurrentInspoDisplay();
+
+        if (category === 'storyKeyword') {
+            const curr = getSelectedStoryKeywords().filter(w => w !== removed);
+            saveSelectedStoryKeywords(curr);
+            renderInspoTags(category);
+        } else {
+            const curr = getLastInspo().filter(w => w !== removed);
+            saveLastInspo(curr);
+            renderInspoTags(category);
+            updateCurrentInspoDisplay();
+        }
     }
 
-    // 切换选中状态（在词库点击，或在顶部已选区域点击）
+    // 切换选中状态（全局人设灵感）
     function toggleInspoWord(word) {
         const curr = getLastInspo(); const idx = curr.indexOf(word);
-        if(idx >= 0) {
-            curr.splice(idx,1); // 移除
-        } else {
-            curr.push(word); // 添加
-        }
+        if(idx >= 0) curr.splice(idx,1); else curr.push(word);
         saveLastInspo(curr);
         renderInspoTags('persona');
         renderInspoTags('trope');
         updateCurrentInspoDisplay();
     }
 
+    // 切换选中状态（故事特定关键词）
+    function toggleStoryKeyword(word) {
+        const curr = getSelectedStoryKeywords(); const idx = curr.indexOf(word);
+        if(idx >= 0) curr.splice(idx,1); else curr.push(word);
+        saveSelectedStoryKeywords(curr);
+        renderInspoTags('storyKeyword');
+    }
+
     function clearInspoPool(category) {
-        const name = category === 'persona' ? '人设' : '类型';
+        const name = category === 'persona' ? '人设' : (category === 'trope' ? '类型' : '故事关键词');
         if(confirm(`清空${name}词库？(不会清空已选的灵感)`)){
             saveInspoPool(category, []);
             renderInspoTags(category);
@@ -931,7 +1029,10 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = (category === 'persona' ? '人设词库' : '类型词库') + '.txt';
+
+        const name = category === 'persona' ? '人设词库' : (category === 'trope' ? '类型词库' : '故事关键词');
+        a.download = name + '.txt';
+
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1001,12 +1102,13 @@
     }
 
     // 批量导入逻辑
-    let importTypeTarget = 'persona'; // persona | trope | surname | charname
+    let importTypeTarget = 'persona'; // persona | trope | storyKeyword | surname | charname
     function openImportModal(type = 'persona') {
         importTypeTarget = type;
         let title = '📋 批量导入';
         if(type === 'persona') title = '📋 批量导入人设';
         else if(type === 'trope') title = '📋 批量导入类型';
+        else if(type === 'storyKeyword') title = '📋 批量导入关键词';
         else if(type === 'surname') title = '📋 批量导入姓氏';
         else if(type === 'charname') title = '📋 批量导入名字字';
 
@@ -1020,7 +1122,7 @@
         const words = raw.split(/[\n,，\s]+/).map(w=>w.trim()).filter(w=>w);
         if(!words.length){ closeImportModal(); return; }
 
-        if(importTypeTarget === 'persona' || importTypeTarget === 'trope') {
+        if(importTypeTarget === 'persona' || importTypeTarget === 'trope' || importTypeTarget === 'storyKeyword') {
             const pool = getInspoPool(importTypeTarget);
             words.forEach(w=>{ if(!pool.includes(w)) pool.push(w); });
             saveInspoPool(importTypeTarget, pool);
@@ -1371,8 +1473,12 @@ ${schemaStr}
         const baseUrl = document.getElementById('aiBaseUrl').value.trim().replace(/\/+$/, '');
         const apiKey = document.getElementById('aiApiKey').value.trim();
         const persona = document.getElementById('aiStoryPersona').value.trim();
+
         const sendTrope = document.getElementById('sendTropeToStory').checked;
-        const trope = getLastInspo().join(' / '); // 读取选中的灵感
+        const trope = getLastInspo().join(' / '); // 读取选中的全局灵感
+
+        const selectedStoryKeywords = getSelectedStoryKeywords().join('、'); // 读取专属故事关键词
+
         const request = document.getElementById('aiStoryRequest').value.trim();
         const useStream = document.getElementById('enableStream').checked;
 
@@ -1391,7 +1497,9 @@ ${schemaStr}
         const replyEl = document.getElementById('aiStoryReplyContent'); replyEl.textContent = '⏳ 构思情节中，请稍候…';
         document.getElementById('aiStoryStatusText').textContent = '⏳ 正在请求 API...';
 
-        const systemMsg = `<persona>\n${persona}\n</persona>`;
+        const authorName = document.getElementById('userNameInput').value.trim();
+
+        const systemMsg = `<persona>\n${persona}\n${authorName ? `你的笔名/用户名是：${authorName}。` : ''}\n</persona>`;
         const userMsg = `
 <world_setting>
 ${wSetting}
@@ -1402,6 +1510,8 @@ ${protosText}
 </protagonists>
 
 ${(sendTrope && trope) ? `<trope>\n本文相关设定灵感词汇：${trope}\n请务必将以上灵感词汇融入作为本章情节的切入点。\n</trope>\n` : ''}
+
+${(selectedStoryKeywords) ? `<keywords>\n核心场景/关键词：${selectedStoryKeywords}\n请务必将这些关键词代表的元素、动作或氛围自然地融入到故事正文中，作为剧情展开的灵感参考。\n</keywords>\n` : ''}
 
 <instructions>
 ${request}
@@ -1420,11 +1530,100 @@ ${request}
     }
 
     // ============================================================
+    //  Supabase 云端同步逻辑
+    // ============================================================
+    const SUPABASE_URL = 'https://bbwykvuqtjnorfkkrafr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_G3_WV2wpOc8vnXntHM0THQ_npmXJaRG';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 1. 保存当前所有数据到云端
+    async function saveToCloud() {
+        const user = document.getElementById('cloudUsername').value.trim();
+        if (!user) return alert("请先输入云端账号名！");
+
+        // 记住云端用户名到本地缓存，方便下次使用
+        localStorage.setItem('ss_cloud_username_v1', user);
+
+        document.getElementById('syncStatus').innerText = "⏳ 正在上传...";
+
+        // 程序中实际使用的所有 localStorage key (自动收集真实数据)
+        const keys = [
+            LS_WORLDS, LS_CUR_WORLD,
+            LS_INSPO_PERSONA, LS_INSPO_TROPE, LS_INSPO_STORY_KEYWORD,
+            LS_INSPO_LAST, LS_STORY_KEYWORD_LAST,
+            LS_SURNAMES, LS_CHARNAMES,
+            LS_AI_PROVIDERS, LS_AI_CURRENT_P,
+            LS_USER_NAME
+        ];
+
+        const dataToSave = {};
+        keys.forEach(k => {
+            const val = localStorage.getItem(k);
+            if (val !== null) dataToSave[k] = val;
+        });
+
+        try {
+            const { error } = await _supabase
+                .from('user_configs')
+                .upsert({ username: user, app_state: dataToSave, updated_at: new Date() }, { onConflict: 'username' });
+
+            if (error) throw error;
+            document.getElementById('syncStatus').innerText = "✅ 已备份 " + new Date().toLocaleTimeString();
+        } catch (error) {
+            alert("备份失败: " + error.message + "\n(请检查 Supabase 表 'user_configs' 是否存在并开放了相应的权限)");
+            document.getElementById('syncStatus').innerText = "❌ 备份失败";
+        }
+    }
+
+    // 2. 从云端拉取数据到本地
+    async function loadFromCloud() {
+        const user = document.getElementById('cloudUsername').value.trim();
+        if (!user) return alert("请先输入云端账号名！");
+
+        localStorage.setItem('ss_cloud_username_v1', user);
+        document.getElementById('syncStatus').innerText = "⏳ 正在下载...";
+
+        try {
+            const { data, error } = await _supabase
+                .from('user_configs')
+                .select('app_state')
+                .eq('username', user)
+                .single();
+
+            if (error) throw error;
+
+            if (data && data.app_state) {
+                // 将云端数据写入本地缓存
+                Object.keys(data.app_state).forEach(key => {
+                    if (data.app_state[key]) localStorage.setItem(key, data.app_state[key]);
+                });
+                alert("✅ 同步成功！点击确定将刷新页面加载最新数据。");
+                location.reload();
+            } else {
+                alert("云端没有该用户的数据！");
+                document.getElementById('syncStatus').innerText = "⚠️ 无数据";
+            }
+        } catch (error) {
+            alert("拉取失败: " + error.message);
+            document.getElementById('syncStatus').innerText = "❌ 拉取失败";
+        }
+    }
+
+    function initCloudUsername() {
+        const name = localStorage.getItem('ss_cloud_username_v1') || '';
+        if(name) document.getElementById('cloudUsername').value = name;
+    }
+
+
+    // ============================================================
     //  初始化加载
     // ============================================================
+    initCloudUsername(); // 恢复云端输入框账号
+    loadUserName();      // 恢复创作者笔名
     initWorldSystem();
     renderInspoTags('persona');
     renderInspoTags('trope');
+    renderInspoTags('storyKeyword');
     updateCurrentInspoDisplay();
     renderNamerTags('surname');
     renderNamerTags('charname');
