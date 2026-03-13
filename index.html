@@ -6,6 +6,37 @@
     <title>小说人设生成器</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* 新增的分离卡片样式，适配亮暗主题 */
+        .parsed-char-card {
+            border: 1px solid var(--border-color, #ddd);
+            border-radius: 8px;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .parsed-char-header {
+            padding: 10px 15px;
+            background: #e3f2fd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color, #ddd);
+        }
+        .parsed-char-body {
+            padding: 15px;
+            font-family: Consolas, monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            color: #333;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #fff;
+        }
+        [data-theme="dark"] .parsed-char-card { background: #1e1e1e; border-color: #444; }
+        [data-theme="dark"] .parsed-char-header { background: #2c3e50; border-color: #444; }
+        [data-theme="dark"] .parsed-char-body { background: #1e1e1e; color: #ecf0f1; }
+    </style>
 </head>
 <body>
 
@@ -48,7 +79,7 @@
 
         <!-- 详细世界书大纲模块 -->
         <div class="form-group">
-            <label>📚 详细世界书大纲 (可手动编写或通过下方 AI 扩写生成)</label>
+            <label>📚 世界书大纲</label>
             <textarea id="worldWorldbook" placeholder="包含详细的时代背景、特殊设定、NPC关系等...在写正文和生成人设时AI会深度参考这里的内容。" oninput="autoSaveWorld()" style="min-height: 120px; font-family: monospace; font-size: 0.85rem; background: #fdfefe;"></textarea>
         </div>
 
@@ -241,7 +272,7 @@
                         <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="behavior" checked><span class="guide-tag">behavior</span><span class="guide-title">行为习惯</span></label><div class="ai-guide-body"><textarea id="guide_behavior">生活/工作习惯、不同情绪时的表现、关系边界差异、以及各种技能。行为细节要具体生动。</textarea></div></div>
                         <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="speech" checked><span class="guide-tag">speech</span><span class="guide-title">说话风格</span></label><div class="ai-guide-body"><textarea id="guide_speech">语气和用词特点、整体风格说明、口音特点、以及网络聊天时的风格。</textarea></div></div>
                         <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="extra"><span class="guide-tag">extra</span><span class="guide-title">额外补充</span></label><div class="ai-guide-body"><textarea id="guide_extra">口头禅、小动作、心理创伤、核心价值观、内心矛盾、秘密、重要人际关系等深层细节。</textarea></div></div>
-                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="nsfw"><span class="guide-tag" style="background: #e74c3c;">nsfw</span><span class="guide-title">🔞 NSFW 信息</span></label><div class="ai-guide-body"><textarea id="guide_nsfw">请补全角色的NSFW信息，保持成人向虚构创作语境：1) 性相关特征：性经验、性取向、性器特征，性爱角色/定位（2-4条）、性爱习惯（2-4条）；2) 性癖/Kinks：给出3-8条偏好关键词或短句；3) 雷区/禁止事项（Limits）：给出3-8条明确边界。描述保持可用于角色卡的结构化表达，避免空泛。</textarea></div></div>
+                        <div class="ai-guide-module"><label class="ai-guide-header"><input type="checkbox" name="aiModule" value="nsfw"><span class="guide-tag" style="background: #e74c3c;">nsfw</span><span class="guide-title">🔞 NSFW 信息</span></label><div class="ai-guide-body"><textarea id="guide_nsfw">请补全角色的NSFW信息，保持成人向虚构创作语境：1) 性相关特征：性经验、性取向、性器官特征，性爱角色/定位（2-4条）、性爱习惯（2-4条）；2) 性癖/Kinks：给出3-8条偏好关键词或短句；3) 雷区/禁止事项（Limits）：给出3-8条明确边界。描述保持可用于角色卡的结构化表达，避免空泛。</textarea></div></div>
 
                         <div class="json-preview-toggle" id="jsonPreviewToggle" onclick="toggleJsonPreview()">
                             <span class="arrow">▶</span> 📋 预期返回的 JSON 格式参考
@@ -257,10 +288,14 @@
 
                 <div class="ai-raw-reply-section" id="aiRawReplySectionChar" style="display:none; margin-top: 20px;">
                     <div class="ai-raw-reply-header">
-                        <h4>人设生成内容</h4>
-                        <button type="button" class="btn-copy-small" onclick="copyRawReply('Char')">📋 复制全部</button>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <h4>人设生成内容</h4>
+                            <button type="button" class="btn-copy-small" onclick="toggleRawReplyChar()" id="btnToggleRawChar" style="display:none; background:#bdc3c7; color:#2c3e50;">👁️ 显示原始回复</button>
+                        </div>
+                        <button type="button" class="btn-copy-small" onclick="copyRawReply('Char')">📋 复制全部(原始)</button>
                     </div>
                     <div class="ai-raw-reply-content" id="aiRawReplyContentChar">等待生成…</div>
+                    <div id="aiParsedCardsChar" style="margin-top: 15px; display: flex; flex-direction: column; gap: 15px;"></div>
                 </div>
             </div>
 
@@ -335,7 +370,7 @@
                 <div class="ai-block" style="background: #fbfdff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px;">
                     <div class="ai-block-label" style="margin-bottom: 6px;"><span class="ai-tag-badge" style="background:#27ae60;">keywords</span> 故事关键词池 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub);">(点击选中/取消，AI将参考选中的词汇构建开头情节)</span></div>
                     <div class="inspo-input-row" style="margin-top: 10px;">
-                        <input type="text" id="storyKeywordInput" placeholder="输入你想在开头出现的元素 (例如: 雨夜、失忆等)，按 Enter 添加…" onkeydown="inspoInputKeydown(event, 'storyKeyword')">
+                        <input type="text" id="storyKeywordInput" placeholder="输入你想在开头出现的元素，按 Enter 添加…" onkeydown="inspoInputKeydown(event, 'storyKeyword')">
                         <button type="button" class="btn-inspo-add" style="background: #27ae60;" onclick="addInspoWord('storyKeyword')">➕ 添加</button>
                     </div>
                     <div class="inspo-tags" id="storyKeywordTags" style="min-height: 60px;"></div>
@@ -441,6 +476,19 @@
         } else {
             container.style.display = 'none';
             arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    // 显示或隐藏原始 AI 回复内容
+    function toggleRawReplyChar() {
+        const el = document.getElementById('aiRawReplyContentChar');
+        const btn = document.getElementById('btnToggleRawChar');
+        if (el.style.display === 'none') {
+            el.style.display = 'block';
+            btn.textContent = '🙈 隐藏原始回复';
+        } else {
+            el.style.display = 'none';
+            btn.textContent = '👁️ 显示原始回复';
         }
     }
 
@@ -940,7 +988,7 @@
         behavior: `    "behavior": { "lifestyle":[], "work_behaviors":[], "emotional_angry":"", "emotional_happy":"", "emotional_sad":"", "boundaries":[], "work_skills":[], "life_skills":[], "hobby_skills":[] }`,
         speech: `    "speech": { "speech_style":"", "speech_reasoning":"", "speech_accent":"", "speech_online":"" }`,
         extra: `    "extra": { "additional_notes":"", "catchphrases":[], "mannerisms":[], "trauma":[], "values":[], "conflicts":[], "secrets":[], "relationships":[], "defining_moments":[] }`,
-        nsfw: `    "nsfw": { "experiences":"", "sexual_orientation":"", "sexual_role":[], "sexual_habits":[], "kinks":[], "limits":[] }`
+        nsfw: `    "nsfw": { "experiences":"","sexual_organs":"", "sexual_orientation":"", "sexual_role":[], "sexual_habits":[], "kinks":[], "limits":[] }`
     };
 
     function getSelectedCharModules() { return Array.from(document.querySelectorAll('input[name="aiModule"]:checked')).map(el=>el.value); }
@@ -970,7 +1018,13 @@
 
         if(!modules.length){ showToast('请勾选至少一个生成模块'); return; }
 
+        // 初始化 UI 显示状态
         document.getElementById('aiRawReplySectionChar').style.display = '';
+        document.getElementById('aiRawReplyContentChar').style.display = 'block';
+        const parsedContainer = document.getElementById('aiParsedCardsChar');
+        if (parsedContainer) parsedContainer.innerHTML = '';
+        const btnToggleRaw = document.getElementById('btnToggleRawChar');
+        if (btnToggleRaw) btnToggleRaw.style.display = 'none';
 
         const guideTexts = modules.map(m => {
             const text = document.getElementById('guide_'+m)?.value.trim(); return text ? `[${m}]：${text}` : '';
@@ -993,7 +1047,74 @@ ${(sendTrope && trope) ? `<trope>\n本文相关设定灵感词汇：${trope}\n</
 ${schemaStr}
 </instructions>`;
 
-        await executeAiGeneration(systemMsg, userMsg, 'aiRawReplyContentChar', 'btnGenerateChar', 'aiStatusTextChar');
+        const success = await executeAiGeneration(systemMsg, userMsg, 'aiRawReplyContentChar', 'btnGenerateChar', 'aiStatusTextChar');
+
+        if (success) {
+            const rawContent = document.getElementById('aiRawReplyContentChar').textContent;
+
+            // 提取 JSON
+            let jsonStr = rawContent;
+            const match = rawContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+            if (match) {
+                jsonStr = match[1];
+            } else {
+                const startIdx = jsonStr.indexOf('{');
+                const endIdx = jsonStr.lastIndexOf('}');
+                if(startIdx !== -1 && endIdx !== -1) {
+                    jsonStr = jsonStr.substring(startIdx, endIdx + 1);
+                }
+            }
+
+            try {
+                const data = JSON.parse(jsonStr);
+                const charNames = Object.keys(data);
+
+                if (charNames.length > 0) {
+                    const container = document.getElementById('aiParsedCardsChar');
+                    charNames.forEach(charName => {
+                        const charData = data[charName];
+                        // 包装为顶层键名形式，保持数据完整性
+                        const wrappedData = { [charName]: charData };
+                        const charJsonStr = JSON.stringify(wrappedData, null, 2);
+
+                        // 创建分离卡片 UI
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = 'parsed-char-card';
+
+                        const header = document.createElement('div');
+                        header.className = 'parsed-char-header';
+                        header.innerHTML = `<h5 style="margin:0; font-size:1.05rem; color:var(--text-main);">🎭 角色：${escapeHtml(charName)}</h5>`;
+
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'btn-copy-small';
+                        copyBtn.innerHTML = '📋 复制此角色';
+                        copyBtn.onclick = () => {
+                            navigator.clipboard.writeText(charJsonStr).then(() => showToast(`📋 已复制 ${charName} 的设定`));
+                        };
+                        header.appendChild(copyBtn);
+
+                        const body = document.createElement('div');
+                        body.className = 'parsed-char-body';
+                        body.textContent = charJsonStr;
+
+                        cardDiv.appendChild(header);
+                        cardDiv.appendChild(body);
+                        container.appendChild(cardDiv);
+                    });
+
+                    // 解析成功，隐藏原始回复，显示切换按钮
+                    document.getElementById('aiRawReplyContentChar').style.display = 'none';
+                    if (btnToggleRaw) {
+                        btnToggleRaw.style.display = 'inline-block';
+                        btnToggleRaw.textContent = '👁️ 显示原始回复';
+                    }
+                }
+            } catch(e) {
+                console.warn("JSON解析失败，回退到原始显示", e);
+                const container = document.getElementById('aiParsedCardsChar');
+                if (container) container.innerHTML = `<div style="padding:10px; color:#e74c3c; background:#fadbd8; border-radius:4px; font-size:0.85rem; margin-top: 10px;">⚠️ AI 返回的内容格式不符合严格 JSON，无法自动分离角色。请从上方手动复制。</div>`;
+            }
+        }
     }
 
     // ============================================================
