@@ -1125,12 +1125,20 @@ ${schemaStr}
     async function generateWorldbookWithAI() {
         const persona = document.getElementById('aiWorldPersona').value.trim();
         const sendTrope = document.getElementById('sendTropeToWorld').checked;
-        const trope = getLastInspo().join(' / ');
+        // 增加容错，防止函数不存在
+        const trope = (typeof getLastInspo === 'function' ? getLastInspo().join(' / ') : '');
         const modules = getSelectedWorldModules();
 
-        const wId = getCurWorldId(); const wData = getWorlds()[wId];
+        const wId = getCurWorldId();
+        const wData = getWorlds()[wId];
         if(!wData){ showToast('未找到当前世界'); return; }
-        const protosText = wData.protagonists.map(p => `【主角】：${p.name || '未命名'} \n【属性/定位】：${p.role}`).join('\n');
+
+        // 1. 【核心修复】完整读取主角信息，包括 brief
+        const protosText = (wData.protagonists || []).map(p => {
+            return `【主角】：${p.name || '未命名'}
+【身份定位】：${p.role || '暂无'}
+【核心人设/背景】：${p.brief || '暂无详细设定'}`;
+        }).join('\n\n---\n\n');
 
         if(!modules.length){ showToast('请勾选至少一个生成模块'); return; }
 
@@ -1150,32 +1158,41 @@ ${schemaStr}
         document.getElementById('aiRawReplySectionWorld').style.display = '';
 
         const schemaStr = `worldbook:\n${guideTexts.join('\n')}`;
-
         const systemMsg = `<persona>\n${persona}\n</persona>`;
-        const userMsg = `
-<protagonists>\n${protosText}\n</protagonists>
-${(sendTrope && trope) ? `<trope>\n相关设定灵感词汇：${trope}\n</trope>\n` : ''}
+
+        // 2. 【语法修复】将指令合并到一个完整的 userMsg 中
+        const userMsg = `请严格参考以下【主角设定】和【灵感词】，为我扩写并生成一部详细的《世界书大纲》。
+生成的细节必须与主角的性格、背景、以及其所处的社会环境保持高度一致，确保世界观是为人设服务的。
+
+<主角设定>
+${protosText}
+</主角设定>
+
+${(sendTrope && trope) ? `<灵感词汇>\n${trope}\n</灵感词汇>\n` : ''}
 
 <instructions>
-请基于以上人物和灵感，深度扩写并生成一部详细的《世界书大纲》。
-你需要扩写以下模块，并严格使用 YAML 格式输出，模块的值使用多行字符串 ( | ) 格式，方便人类阅读。除了 YAML 以外，不要输出任何多余的解释废话或 Markdown 代码块外壳。
+请深度扩写以下模块，并严格使用 YAML 格式输出，模块的值使用多行字符串 ( | ) 格式。
+除了 YAML 以外，不要输出任何多余的解释废话。
 
 YAML 模板结构要求：
 ${schemaStr}
 </instructions>`;
 
+        // 3. 执行生成
         const success = await executeAiGeneration(systemMsg, userMsg, 'aiRawReplyContentWorld', 'btnGenerateWorld', 'aiStatusTextWorld');
 
-        // 如果生成成功，自动填入并保存到小世界的 textarea 中
+        // 4. 自动保存逻辑
         if(success) {
             const rawContent = document.getElementById('aiRawReplyContentWorld').textContent;
             // 清理可能存在的 Markdown 代码块包裹
-            let cleanYaml = rawContent.replace(/```yaml/g, '').replace(/```/g, '').trim();
+            let cleanYaml = rawContent.replace(/```yaml/gi, '').replace(/```/gi, '').trim();
 
             const wbTextarea = document.getElementById('worldWorldbook');
-            wbTextarea.value = cleanYaml;
-            autoSaveWorld();
-            showToast('✅ 世界书已自动更新并保存到顶部小世界面板');
+            if(wbTextarea) {
+                wbTextarea.value = cleanYaml;
+                autoSaveWorld();
+                showToast('✅ 世界书已自动更新并保存到顶部小世界面板');
+            }
         }
     }
 
